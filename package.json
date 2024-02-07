@@ -1,0 +1,22 @@
+{
+  "name": "setupliberlnews",
+  "version": "1.0.0",
+  "description": "Installateur de patchs pour l'équipe du Liberl News",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "start": "electron ."
+  },
+  "author": "Schneitizel S. Sekai",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.1.4",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "jquery": "^3.7.1",
+    "node-fetch": "^2.6.7",
+    "node-stream-zip": "^1.15.0",
+    "yauzl": "^2.10.0"
+  }
+}

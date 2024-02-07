@@ -1,0 +1,98 @@
+        <div class="mainWindow">
+            <div class="leftMenu">
+                <img class="logo" src="images/logo.png">
+                <button id="modeTrails" onclick="changeMode('trails')" class="active">Série "Trails"</button>
+                <button id="modeRetro" onclick="changeMode('retro')">Jeux rétros</button>
+
+                <span class="icon-container">
+                    <i class="fa-solid fa-info"></i>
+                    <div class="infos">
+                        <div class="setupVersion">
+                            Version X.X.X.
+                        </div>
+                        <div class="contact">
+                            Contact
+                        </div>
+                        <div class="aide">
+                            Aide & support
+                        </div>
+                    </div>
+                </span>
+            </div>
+
+            <div class="mainMenu">
+                <!--
+                    L'élément qui affiche les jeux Trails
+                    Vide par défaut, rempli via functions.js au démarrage
+                    Affiché par défaut
+                -->
+                <div class="displayList Trails">
+                    <div id="trailsGames" class="game">
+
+                    </div>
+                </div>
+
+                <!--
+                    L'élément qui affiche les jeux rétro
+                    Vide par défaut, rempli via functions.js au démarrage
+                    Masqué par défaut
+                -->
+                <div class="displayList Retro">
+                    <div id="retroGames" class="game">
+
+                    </div>
+                </div>
+
+                <!--
+                    L'élément qui affiche la page d'un projet
+                    Vide par défaut, rempli via functions.js quand demandé
+                    Masqué par défaut
+                -->
+                <div class="displayGame">
+                    <i onclick="goHome()" class="fa-solid fa-house"></i>
+                    <h1 id="gameName">
+                        NOM DU JEU
+                    </h1>
+                    <div class="gamePictures">
+                        <div class="displayPicture">
+                        <img id="gamePicture" src="">
+                            <i onclick="changeImage(-1)" class="fa-solid fa-arrow-left"></i>
+                            <i onclick="changeImage(1)" class="fa-solid fa-arrow-right"></i>
+                        </div>
+                        <div class="inputFolder">
+                            <input id="file" type="file" webkitdirectory directory/>
+                            <div class="filePath">Aucun chemin d'accès spécifié</div>
+                        </div>
+                        <div class="gauge"></div>
+                    </div>
+                    <div class="gameCredits">
+                        <i onclick="displayCredits()" class="fa-solid fa-download"></i>
+                        <span id="credits"></span>
+                    </div>
+                    <div class="gameInfos">
+                        <i onclick="displayCredits()" class="fa-solid fa-user-group"></i>
+                        <div id="gameDesc">
+                            DUMMY DUMMY DUMMY
+                        </div>
+                        <div class="gamePatch">
+                            <div id="desc">
+                                • Version du patch installée :<br><span id="versionPatchInstalle">UNDEFINED</span><br>
+                                • Version des voix installée :<br><span id="versionVoiceInstalle">UNDEFINED</span><br><br />
+
+                                • Version du patch disponible :<br><span id="versionPatchDispo">UNDEFINED</span><br>
+                                • Version des voix disponible :<br><span id="versionVoiceDispo">UNDEFINED</span><br>
+                            </div>
+                            <label id="checkVoice" class="container">Installer le patch des voix
+                                <input id="checkBox" type="checkbox" checked="checked">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                        <button onclick="downloadFile()" id="installPatch">
+                            Installer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="footer"></div>
+            </div>
+        </div>
