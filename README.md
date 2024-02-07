@@ -13,12 +13,15 @@ Building
 ========
 
 - First time only:
+
 Install the project's dependencies with the `npm install` command
 
 - Try the tool without compiling:
+
 Use the `npm start` command
 
 - Compiling into .EXE:
+
 In the folder containing the project file, use the `electron-packager SetupLiberlNews <FOLDER_NAME> --platform=win32 --arch=x64" command
 
 License
