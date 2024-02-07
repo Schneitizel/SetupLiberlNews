@@ -6,8 +6,9 @@ WORKS IN PROGRESS - THIS TOOL MAY OR MAY NOT WORK
 A powerful GUI tool to install translation patches from the Liberl News team
 
 [Twitter](https://twitter.com/SoraNoKisekiFR)
-
 [Discord Server](https://discord.gg/kpgj6ekrF5)
+
+
 
 Building
 ========
