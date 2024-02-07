@@ -8,7 +8,7 @@ A powerful GUI tool to install translation patches from the Liberl News team
 [Twitter](https://twitter.com/SoraNoKisekiFR)
 [Discord Server](https://discord.gg/kpgj6ekrF5)
 
-
+![picture](https://i.imgur.com/hsqD7m5.png)
 
 Building
 ========
