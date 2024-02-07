@@ -86,10 +86,8 @@ async function loadElements()
 
     let version = require('./package.json');
     $('.setupVersion').html('Version ' + version['version']);
-    
-    let footerContent = await getFetch('https://pastebin.com/raw/yj8M26c1', 'GET', {}, false); // On charge le message du footer
 
-    $('.footer').html(footerContent); // On affiche le message du footer
+    $('.footer').html(config["footerText"]); // On affiche le message du footer
 
         // On boucle le fichier des projets, on affiche les projets Trails d'abord
         Object.entries(projectsList["trails"]).forEach(([key, value]) => {
@@ -140,12 +138,12 @@ async function loadConfig()
 {
     config = require("./config.json");
     if(config["useOnlineConfig"]) // Si useOnlineConfig, on utilise 
-        config = await getFetch('https://pastebin.com/raw/gvvBYuum', 'GET', {}, true);
+        config = await getFetch('https://raw.githubusercontent.com/Schneitizel/SetupLiberlNews/main/config.json', 'GET', {}, true);
 
     if(fs.existsSync('./projects.json') && !config["useOnlineConfig"]) // Si le fichier projects.json existe dans le répertoire de l'appli ET qu'on se sert des fichiers locaux, on l'utilise
         projectsList = require("./projects.json");
     else // Sinon, on va chercher celui en ligne !
-        projectsList = await getFetch('https://pastebin.com/raw/9LGcPVmV', 'GET', {}, true);
+        projectsList = await getFetch('https://raw.githubusercontent.com/Schneitizel/SetupLiberlNews/main/projects.json', 'GET', {}, true);
 
     return 1;
 }
