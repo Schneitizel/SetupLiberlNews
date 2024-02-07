@@ -5,7 +5,10 @@ WORKS IN PROGRESS - THIS TOOL MAY OR MAY NOT WORK
 
 A powerful GUI tool to install translation patches from the Liberl News team
 
+Code such as functions and variables are written in English, but as this tool is intended to be used by French speakers, comments are written in French
+
 [Twitter](https://twitter.com/SoraNoKisekiFR)
+
 [Discord Server](https://discord.gg/kpgj6ekrF5)
 
 ![picture](https://i.imgur.com/hsqD7m5.png)
