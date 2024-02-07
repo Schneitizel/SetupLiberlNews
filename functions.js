@@ -138,23 +138,15 @@ async function loadElements()
 
 async function loadConfig()
 {
-    if(fs.existsSync('./config.json')) // Si le fichier config.json existe dans le répertoire de l'appli, on l'utilise
-    {
-        config = require("./config.json");
-    }
-    else // Sinon, on va chercher celui en ligne !
-    {
+    config = require("./config.json");
+    if(config["useOnlineConfig"]) // Si useOnlineConfig, on utilise 
         config = await getFetch('https://pastebin.com/raw/gvvBYuum', 'GET', {}, true);
-    }
 
-    if(fs.existsSync('./projects.json')) // Si le fichier projects.json existe dans le répertoire de l'appli, on l'utilise
-    {
+    if(fs.existsSync('./projects.json') && !config["useOnlineConfig"]) // Si le fichier projects.json existe dans le répertoire de l'appli ET qu'on se sert des fichiers locaux, on l'utilise
         projectsList = require("./projects.json");
-    }
     else // Sinon, on va chercher celui en ligne !
-    {
         projectsList = await getFetch('https://pastebin.com/raw/9LGcPVmV', 'GET', {}, true);
-    }
+
     return 1;
 }
 
