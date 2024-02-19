@@ -56,10 +56,7 @@ $(document).ready(async function(){
 
     // On vide le dossier pour éviter les fichiers résiduels
     cleanFolder();
-
-    // On charge les dossiers Steam
-    getSteamFolders();
-
+	
     if(fs.existsSync(filepath + directorySeparator + 'Liberl News' + directorySeparator + 'config.json')){
         dataUser = JSON.parse(fs.readFileSync(filepath + directorySeparator + 'Liberl News' + directorySeparator + 'config.json'));
     }else{
@@ -220,6 +217,17 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('.filePath').addClass("noPath");
 
     // On essaye de trouver où se trouve le jeu, si l'utilisateur l'a d'installé sur Steam
+	
+	
+	let installationPath = null;
+	
+	getGivenGame(gameLoaded).then((gameInstallationPath) => {
+		if (gameInstallationPath !== null) {
+			installationPath = gameInstallationPath; 
+			$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath + directorySeparator);
+		}
+	});
+	
     /*steamAppsFolders.forEach(element => {
         if($('.filePath').hasClass('noPath') && fs.existsSync(element + directorySeparator + gameLoaded['steamFolderName'] + directorySeparator))
             $('.filePath').removeClass("noPath").addClass("okPath").html(element + directorySeparator + gameLoaded['steamFolderName'] + directorySeparator);
@@ -679,80 +687,103 @@ async function getFetch(url, method = "POST", args = {}, json = true){
     return result;
 }
 
+async function getRegistryValue(regKey, data) {
+    return new Promise((resolve, reject) => {
+        
+        const command = spawn('REG', ['QUERY', regKey, '/v', data]);
+
+        let installationPath = '';
+
+        command.stdout.on('data', (output) => {
+            installationPath += output.toString();
+        });
+        command.on('exit', (code) => {
+            // Check the exit code to determine if the key exists
+            if (code === 0) {
+                const match = installationPath.match(/REG_SZ\s+(.*)/);
+                const pathValue = match[1].trim();
+                resolve(pathValue);
+            } else {
+                // Registry key not found, GOG installation not detected
+                resolve(null);
+            }
+        });
+    });
+}
+
 // TO-DO refactoriser la fonction, car celle-ci est vieille et peu optimisée !
 // Crédits : Ashley A. Sekai (C.R.X.)
-async function getSteamFolders(){
+async function getGivenGame(game){
 
     return new Promise((resolve, reject) => {
 
     let i = 0;
 
     setTimeout(function() { // Si au bout de 10 secondes, le programme n'a pas pu trouver les dossiers, il passe à la suite, pour éviter un chargement infini
-        resolve();
+        resolve(null);
     }, 1000*10);
 
-    if (process.platform === 'win32' && os.homedir() != 'C:\\users\\steamuser') { // Si l'utilisateur est sous Windows
+    if (process.platform === 'win32') { // Si l'utilisateur est sous Windows
+	
+		getRegistryValue('HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ' + game['steamId'],'InstallLocation').then((installationPath) => {
+			if (installationPath !== null) {
+				resolve(installationPath)
+			} else {
+				
+				Key = 'HKEY_LOCAL_MACHINE\\SOFTWARE\\GOG.com\\Games\\' + game['GOGId']
+				
+				getRegistryValue(Key,'path').then((installationPath) => {
+					if (installationPath !== null) {
+						resolve(installationPath)
+					} else {
+						
+						const pathsToCheck = [
+							"C:\\Program Files\\",
+							"C:\\Program Files (x86)\\",
+						];
+						for (const path of pathsToCheck) {
+                            if (fs.existsSync(path + game['steamFolderName'])){
+                                resolve(path + game['steamFolderName']);
+                                return;
+							}
+                        }
+                        resolve(null);
+                        
+					}
+				});
+				
+			}
+		});
+		
 
-        const command = spawn('REG', ["QUERY", "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Valve\\Steam", "/v", "InstallPath"]);
-        command.stdout.on('data', async output => {
-
-            const textRes = await loopFolder(output.toString().split('\n'));
-
-            if(textRes == '')
-            {
-                resolve();
-                return;
-            }
-
-            var text = textRes.split('REG_SZ    ');
-
-            if(text[1] !== undefined){
-                text = text[1]
-                .replaceAll(/\r?\n|\r/g, "")
-                .replaceAll('ProgramFiles(x86)', 'Program Files (x86)')
-                .replaceAll('ProgramFiles', 'Program Files');
-                let listing = fs.readFileSync(text+'\\steamapps\\libraryfolders.vdf').toString().split('"path"		');
-                listing.forEach((value, index) => {
-                    if(index > 0){
-                        steamAppsFolders[i] = value.split('"')[1].replaceAll('\\\\', directorySeparator) + '\\steamapps\\common';
-                        i++;
-                    }
-
-                    if(index == listing.length -1)
-                    {
-                        resolve();
-                    }
-                    
-                });
-            }
-        });
-
-    } else { // Sinon, il est sous Steam Deck
-
+    } else if (os.homedir() != 'C:\\users\\steamuser') { // Sinon, il est sous Steam Deck
+		var list = [] 
         if(!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf'))
         {
-            steamAppsFolders[0] = '/home/deck/.local/share/Steam/steamapps/common';
-            steamAppsFolders[1] = '/home/steam/.local/share/Steam/steamapps/common';
-            steamAppsFolders[2] = '/run/media/mmcblk0p1/steamapps/common';
-            resolve();
+            list[0] = '/home/deck/.local/share/Steam/steamapps/common';
+            list[1] = '/home/steam/.local/share/Steam/steamapps/common';
+            list[2] = '/run/media/mmcblk0p1/steamapps/common';
         }
         else
         {
             let listing = fs.readFileSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf').toString().split('"path"		');
                 listing.forEach((value, index) => {
                     if(index > 0){
-                        steamAppsFolders[i] = value.split('"')[1] + '/steamapps/common';
+                        list[i] = value.split('"')[1] + '/steamapps/common';
                         i++;
                     }
-
-                    if(index == listing.length -1)
-                    {
-                        console.log(steamAppsFolders)
-                        resolve();
-                    }
-                    
                 });
         }
+		
+		
+		for (const path of list) {
+            if (fs.existsSync(path + game['steamFolderName'])){
+                resolve(path + game['steamFolderName']);
+                return;
+			}
+        }
+        resolve(null);
+		
     }
 
     });
