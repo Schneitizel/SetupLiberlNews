@@ -12,6 +12,7 @@ const fetch = require('node-fetch'); // Meilleure gestion de fetch (pour res.bod
     // TO-DO : Trouver ou créer un framework unique qui fait les deux
 const StreamZip = require('node-stream-zip'); // Gestion des fichiers .zip, nombre de fichiers et méta-données
 const yauzl = require('yauzl'); // Gestion des fichiers .zip, extraction détaillée
+const path = require('path');
 
 const agent = new https.Agent({
     rejectUnauthorized: false,
@@ -386,8 +387,21 @@ function updateGUI(currentState){
 	}
 	
 	
-    /*$('#file').on('change', async function( e ) {
-        let segments = document.getElementById("file").files[0].path.split("\\");
+    $('#file').on('change', async function( e ) {
+		installationPath = document.getElementById("file").files[0].path
+		const stats = fs.statSync(installationPath);
+
+		if (stats.isFile()) {
+		  installationPath = path.dirname(installationPath);
+		}
+	  
+		console.log(installationPath)
+		currentState = getCurrentState(); // on actualise l'état
+		updateGUI(currentState);
+		$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
+        $('#file').prop('disabled', true);
+			
+        /*let segments = document.getElementById("file").files[0].path.split("\\");
         var nomDossier = segments[segments.length - 2];
 
         if(nomDossier == gameLoaded['steamFolderName'] && compare != 3)
@@ -395,8 +409,8 @@ function updateGUI(currentState){
             $('.filePath').removeClass("noPath").addClass("okPath").html(segments.slice(0, -1).join('\\'));
             $('#file').prop('disabled', true);
             $('#installPatch').removeClass("disabled");
-        }
-    });*/
+        }*/
+    });
 
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
     $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
