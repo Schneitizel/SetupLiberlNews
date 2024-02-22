@@ -77,17 +77,18 @@
                         <div class="gamePatch">
                             <div id="desc">
                                 • Version du patch installée :<br><span id="versionPatchInstalle">UNDEFINED</span><br>
-                                • Version des voix installée :<br><span id="versionVoiceInstalle">UNDEFINED</span><br><br />
-
                                 • Version du patch disponible :<br><span id="versionPatchDispo">UNDEFINED</span><br>
-                                • Version des voix disponible :<br><span id="versionVoiceDispo">UNDEFINED</span><br>
                             </div>
-                            <label id="checkVoice" class="container">Installer le patch des voix
+							<button onclick="uninstall()" id="uninstallAll">
+								Désinstaller
+							</button>
+                            <label id="checkVoice" class="container">Inclure les voix de la version EVO
                                 <input id="checkBox" type="checkbox" checked="checked">
                                 <span class="checkmark"></span>
                             </label>
+							
                         </div>
-                        <button onclick="downloadFile()" id="installPatch">
+                        <button onclick="downloadFiles()" id="installPatch">
                             Installer
                         </button>
                     </div>
