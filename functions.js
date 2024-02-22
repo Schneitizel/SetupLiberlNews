@@ -35,6 +35,9 @@ var steamAppsFolders = []; // Contient tous les chemins d'installation des jeux 
 var filepath;
 var directorySeparator;
 
+var installationPath = null;
+
+
 if (process.platform === 'win32') {
     filepath = process.env.APPDATA;
     directorySeparator = '\\';
@@ -182,6 +185,7 @@ function cleanFolder(){
 // game : numéro du jeu (0 pour Sky est le premier Sky)
 function openProject(type = "trails", id = "Sky", game = 0)
 {
+	
     menu = $('.Trails'); // On vérifie quel menu doit disparaître ; et grâce à ça, on sait aussi lequel doit ré-apparaître !
     if(!$('#modeTrails').hasClass('active'))
         menu = $('.Retro');
@@ -190,6 +194,7 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('.gameCredits').css('display', 'none');
 
     gameLoaded = projectsList[type][id]['games'][game];
+	
     let gameName = gameLoaded['name'];
 
     $('#credits').html('• Équipe du projet : <br><br />');
@@ -207,6 +212,9 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('#installPatch').removeClass("disabled");
     $('#installPatch').html("Installer");
 
+	$('#uninstallAll').removeClass("disabled");
+    $('#uninstallAll').html("Désinstaller");
+	
     $('#checkVoice').css("display", "block");
     $('.gauge').css("background", "linear-gradient(to right, #3DB9F5 0%, #3df5c2 0%, #3DB9F500 0%)");
     $('.gauge').html("");
@@ -218,62 +226,28 @@ function openProject(type = "trails", id = "Sky", game = 0)
 
     // On essaye de trouver où se trouve le jeu, si l'utilisateur l'a d'installé sur Steam
 	
-	
-	let installationPath = null;
-	
-	getGivenGame(gameLoaded).then((gameInstallationPath) => {
-		if (gameInstallationPath !== null) {
-			installationPath = gameInstallationPath; 
-			$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath + directorySeparator);
-		}
-	});
+	installationPath = getGivenGame(gameLoaded)
 	
     /*steamAppsFolders.forEach(element => {
         if($('.filePath').hasClass('noPath') && fs.existsSync(element + directorySeparator + gameLoaded['steamFolderName'] + directorySeparator))
             $('.filePath').removeClass("noPath").addClass("okPath").html(element + directorySeparator + gameLoaded['steamFolderName'] + directorySeparator);
     });*/
-
+    $('.filePath').removeClass("noPath").addClass("okPath").html(installationPath + directorySeparator);
     // On affiche les versions des patchs et des voix que l'utilisateur possède, et celles disponibles
-    let patchVersion = ((dataUser["projects"][gameName]["patch"] == null) ? "Aucune" : dataUser["projects"][gameName]["patch"]);
-    let voiceVersion = ((dataUser["projects"][gameName]["voice"] == null) ? "Aucune" : dataUser["projects"][gameName]["voice"]);
-    let color = "#6CDC3D";
+	
 
-    let compare = compareVersions(patchVersion, projectsList[type][id]['games'][game]['patchVersion']);
 
-    if(patchVersion != "Aucune")
-    {   
-        if(compare == 3) // Si l'utilisateur a déjà le dernier patch
-        {
-            color = "#ffffff";
-            $('#installPatch').addClass("disabled");
-        }
-        else if(compare == 1) // Sinon, il y a une mise à jour
-        {
-            $('#installPatch').html("Mise à jour");
-        }
-    }
+	/*
+	Soit le patch n'est pas installé, les voix non plus, la case des voix n'est pas cochée => on installe que le patch (scénario le plus simple)
+	Soit rien n'est installé mais la case voix est cochée => on installe voix + patch
+	soit les voix sont installées mais pas le patch => on installe le patch
+	soit le patch est installé mais pas les voix, mais la case est cocheé => on installe les voix
+	si y a un problème à un quelconque moment l'utilisateur peut cliquer sur un bouton désinstaller qui va enlever voix et patch (table rase). ensuite il pourra cocher la case des voix et installer et ça lui donnera voix et patch*/
+    const currentState = getCurrentState();
+	console.log("current state: ", currentState);
+	updateGUI(currentState);
 
-    $('#file').on('change', async function( e ) {
-        let segments = document.getElementById("file").files[0].path.split("\\");
-        var nomDossier = segments[segments.length - 2];
-
-        if(nomDossier == gameLoaded['steamFolderName'] && compare != 3)
-        {
-            $('.filePath').removeClass("noPath").addClass("okPath").html(segments.slice(0, -1).join('\\'));
-            $('#file').prop('disabled', true);
-            $('#installPatch').removeClass("disabled");
-        }
-    });
-
-    $('#versionPatchInstalle').html('   ' + patchVersion);
-    $('#versionVoiceInstalle').html('   ' + voiceVersion);
-
-    $('#versionPatchDispo').html('   ' + projectsList[type][id]['games'][game]['patchVersion']).css('color', color);
-    $('#versionVoiceDispo').html('   ' + ((projectsList[type][id]['games'][game]['voiceVersion']) == '0' ? 'Aucune' : projectsList[type][id]['games'][game]['voiceVersion']));
-
-    if(projectsList[type][id]['games'][game]['voiceVersion'] == '0')
-        $('#checkVoice').css("display", "none");
-
+	
     menu.animate({
         opacity: 0
     }, config["speedAnimation"]);
@@ -395,151 +369,140 @@ function displayCredits()
     }
 }
 
-// Lancé quand on appuie sur le bouton "Installer/Mise à jour"
-async function downloadFile() {
+function updateGUI(currentState){
+	let color = "#6CDC3D";
+	
+	if (((currentState.patchState == 1) && (!currentState.voicePatchToBeInstalled))  || (currentState.patchState == 2) ||(currentState.voicePatchToBeInstalled)) //si mise à jour manquante c'est mise à jour.
+    {   
+		$('#installPatch').html("Mise à jour");
+		
+    } else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1))
+	{
+		$('#installPatch').html("Installer");
+	}
+	else {
+		color = "#ffffff";
+		$('#installPatch').addClass("disabled");
+	}
+	
+	
+    /*$('#file').on('change', async function( e ) {
+        let segments = document.getElementById("file").files[0].path.split("\\");
+        var nomDossier = segments[segments.length - 2];
 
-    // Si le bouton "Installer" est désactivé, on ne fait rien
-    if($('#installPatch').hasClass('disabled'))
-        return;
-
-    // On obtient d'abord les infos du fichier, tel que son nom et son poids
-    $('.gauge').html('Récupération des infos du patch...');
-
-    var url = 'https://www.googleapis.com/drive/v3/files/' + gameLoaded['patchID'] + '?key=' + config['ApiGD'];//' + '&alt=media';
-    const resultatWeb = await getFetch(url, 'GET', {}, false);
-
-    // S'il y a eu une erreur, on l'affiche et on arrête
-    // 403 : Accès non autorisé, clé API incorrecte ? ; 404 : Fichier non trouvé ; 500/503 : Serveur indisponible ; autre : Voir Google
-    if(resultatWeb['error'] !== undefined)
-    {
-        $('.gauge').html('Erreur ' + resultatWeb['error']['code'])
-        .css('background', '#ff000080');
-        return;
-    }
-
-    // On obtient le fichier, et on crée sa version locale (Dans AppData/Liberl News)
-    $('.gauge').html('Récupération du fichier du patch...');
-
-    let res = await fetch(url + '&alt=media', { agent });
-    const fileLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
-    let zipFilePath = filepath + directorySeparator + 'Liberl News' + directorySeparator + resultatWeb['name'];
-
-    let fileStream = fs.createWriteStream(zipFilePath);
-
-    // Permet de calculer en combien de temps le fichier a été téléchargé
-    var seconds = 0.0;
-    var inter = setInterval(function() {
-        seconds += 0.01;
-    }, 10);
-
-    // Permet de calculer (approximativement) la vitesse de téléchargement
-    let written = 0;
-    let lastWritten = 0;
-    let speed = 0;
-    
-    var calculSpeed = setInterval(function() {
-        speed = written - lastWritten;
-        lastWritten = written;
-    }, 1000);
-
-    await new Promise((resolve, rejectPromise) => {
-
-        res.body.pipe(fileStream);
-        res.body.on('data', data => {
-            // Durant le téléchargement, on calcule la progression et on met à jour la jauge
-            written += data.length;
-            let percent = ((written/fileLength)*100);
-            drawGauge(percent);
-            $('.gauge').html('Téléchargement - ' + percent.toFixed(2) + '% (' + formatBytes(speed) + ')');
-        });
-        res.body.on("error", reject => {
-            // En cas d'erreur
-            console.error('ERREUR : ' + reject);
-            $('.gauge').html('Téléchargement interrompu !')
-            .css('background', '#ff000080');
-            return rejectPromise;
-        });
-        fileStream.on("finish", resolve);
-
-    });
-    
-    // On a terminé de télécharger le patch, 
-    clearInterval(inter);
-    clearInterval(calculSpeed);
-
-    //TO-DO afficher la durée du téléchargement, si voulu (Où ?)
-    //console.log('Téléchargement terminé en ' + seconds.toFixed(2) + ' secondes');
-
-    // On débute l'extraction de l'archive
-    await fct(zipFilePath);
-
-    // On supprime l'archive .zip téléchargée ; en cas d'erreur, osef, on passe à la suite !
-    fs.unlink(zipFilePath, (err) => {
-        if (err) {
-            throw err;
-        }
-    });
-
-    // On vérifie si l'utilisateur a demandé à avoir les voix ET qu'une version pour les voix existe
-    // TO-DO créer une seule fonction pour télécharger ce que l'on souhaite !
-    if($('#checkBox').is(':checked') && gameLoaded['voiceVersion'] != '0' && gameLoaded['voiceID'] != "")
-    {
-        $('.gauge').html('Récupération des infos du patch des voix...');
-        url = 'https://www.googleapis.com/drive/v3/files/' + gameLoaded['voiceID'] + '?key=' + config['ApiGD'];
-
-        const resultatWebVoices = await getFetch(url, 'GET', {}, false);
-        if(resultatWebVoices['error'] !== undefined)
+        if(nomDossier == gameLoaded['steamFolderName'] && compare != 3)
         {
-            $('.gauge').html('Erreur ' + resultatWebVoices['error']['code'])
-            .css('background', '#ff000080');
+            $('.filePath').removeClass("noPath").addClass("okPath").html(segments.slice(0, -1).join('\\'));
+            $('#file').prop('disabled', true);
+            $('#installPatch').removeClass("disabled");
+        }
+    });*/
+
+    $('#versionPatchInstalle').html('   ' + currentState.userVersion);
+    $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
+
+	
+}
+
+function getCurrentState(){
+	
+	const vp = isVoicePatchInstalled();
+	
+	let userVersion = "Aucune"
+	if (installationPath !== null){
+		
+		const versions_path = installationPath + "/data_fr/system/versions.json";
+		if(fs.existsSync(versions_path)){
+			versions = require(versions_path);
+			userVersion = versions['current_patch_id'];
+		} 
+			
+	}
+    let availableVersion = gameLoaded['patchVersion']
+    let compare = compareVersions(userVersion, availableVersion);
+	
+	
+	const state = {
+		voicePatchToBeInstalled: false,
+		patchState: 0,
+		userVersion: userVersion,
+	};
+
+
+	if ((vp == false) && (document.getElementById('checkBox').checked)){
+		//besoin d'installer le patch des voix
+		state.voicePatchToBeInstalled = true
+	}
+	
+	if (userVersion == "Aucune"){
+		state.patchState = 1;
+	}
+	else {
+		if (compare == 1){
+			state.patchState = 2; //mettre à jour uniquement (ça revient au même, juste le bouton change)
+		}
+		else if (compare == 3)
+		{
+			state.patchState = 0;
+		}
+	}
+	return state;
+}
+
+
+
+async function downloadAndExtractZip(name, ID) {
+    $('.gauge').html("Récupération des infos pour " + name + "...");
+    const url = 'https://www.googleapis.com/drive/v3/files/' + gameLoaded[ID] + '?key=' + config['ApiGD'];
+
+    try {
+        const resultatWebVoices = await getFetch(url, 'GET', {}, false);
+        if (resultatWebVoices['error'] !== undefined) {
+            $('.gauge').html('Erreur ' + resultatWebVoices['error']['code']).css('background', '#ff000080');
             return;
         }
+		drawGauge(0);
+        $('.gauge').html("Récupération du zip de " + name + ". Veuillez patienter...");
 
-        $('.gauge').html('Récupération du fichier des voix...');
+        const res = await fetch(url + '&alt=media', { agent });
+        const fileLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
+        const zipFilePath = filepath + directorySeparator + 'Liberl News' + directorySeparator + resultatWebVoices['name'];
 
-        res = await fetch(url + '&alt=media', { agent });
-        const fileVoicesLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
-        zipFilePath = filepath + directorySeparator + 'Liberl News' + directorySeparator + resultatWebVoices['name'];
-
-        seconds = 0.0;
-        inter = setInterval(function() {
+        let seconds = 0.0;
+        let inter = setInterval(() => {
             seconds += 0.01;
         }, 10);
 
-        written = 0;
-        lastWritten = 0;
-        speed = 0;
-        
-        calculSpeed = setInterval(function() {
+        let written = 0;
+        let lastWritten = 0;
+        let speed = 0;
+
+        let calculSpeed = setInterval(() => {
             speed = written - lastWritten;
             lastWritten = written;
         }, 1000);
 
-        fileStream = fs.createWriteStream(zipFilePath);
-        drawGauge(0);
+        const fileStream = fs.createWriteStream(zipFilePath);
+        
         $('.gauge').html('');
-
-        await new Promise((resolve, rejectPromise) => {
-
+        await new Promise((resolve, reject) => {
             res.body.pipe(fileStream);
+
             res.body.on('data', data => {
-                // Durant le téléchargement, on calcule la progression et on met à jour la jauge
                 written += data.length;
-                let percent = ((written/fileLength)*100);
+                const percent = (written / fileLength) * 100;
                 drawGauge(percent);
                 $('.gauge').html('Téléchargement - ' + percent.toFixed(2) + '% (' + formatBytes(speed) + ')');
             });
-            res.body.on("error", reject => {
-                // En cas d'erreur
-                console.error('ERREUR : ' + reject);
-                $('.gauge').html('Téléchargement interrompu !')
-                .css('background', '#ff000080');
-                return rejectPromise;
-            });
-            fileStream.on("finish", resolve);
-    
-        });
 
+            res.body.on('error', err => {
+                console.error('ERREUR : ' + err);
+                $('.gauge').html('Téléchargement interrompu !').css('background', '#ff000080');
+                reject(err);
+            });
+
+            fileStream.on('finish', resolve);
+        });
         clearInterval(inter);
         clearInterval(calculSpeed);
 
@@ -551,13 +514,80 @@ async function downloadFile() {
             }
         });
 
-        // On enregistre le version des voix installées
-        dataUser['projects'][gameLoaded['name']]['voice'] = gameLoaded['voiceVersion'];
-
-        // On met à jour la version des voix installées sur la page
-        $('#versionVoiceInstalle').html('   ' + gameLoaded['voiceVersion']);
+    } catch (error) {
+        console.error('Error:', error);
     }
+}
 
+// Lancé quand on appuie sur le bouton "Désinstaller"
+function uninstall() {
+
+    if($('#uninstallAll').hasClass('disabled'))
+        return;
+	$('#uninstallAll').addClass("disabled");
+	$('#uninstallAll').html("Désinstaller");
+	
+    const paths = gameLoaded['toBeUninstalled']
+	for (var filePath of paths) {
+		
+		fullPath = installationPath + directorySeparator + filePath;
+		try {
+			// Check if the path exists
+			const exists = fs.existsSync(fullPath);
+
+			if (exists) {
+				const stats = fs.statSync(fullPath);
+
+				if (stats.isDirectory()) {
+					fs.rmdirSync(fullPath, { recursive: true });
+					console.log(`Removed folder: ${filePath}`);
+				} else {
+					fs.unlinkSync(fullPath);
+					console.log(`Removed file: ${filePath}`);
+				}
+
+				// Update gauge after each removal
+				drawGauge(/* calculate and provide the appropriate progress */);
+				$('.gauge').html(/* update the gauge text */);
+			} else {
+				console.log(`Path does not exist: ${filePath}`);
+			}
+		} catch (error) {
+			console.error(`Error removing ${filePath}: ${error.message}`);
+		}
+    }
+	
+    // On désactive le bouton de désinstallation
+    
+    
+
+    // On affiche dans la jauge que tout est ok
+    drawGauge(100);
+    $('.gauge').html('Patch supprimé !');
+
+	currentState = getCurrentState(); // on actualise l'état
+	updateGUI(currentState);
+}
+
+// Lancé quand on appuie sur le bouton "Installer/Mise à jour"
+async function downloadFiles() {
+
+	var currentState = getCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
+	console.log(currentState)
+	updateGUI(currentState);
+	
+    // Si le bouton "Installer" est désactivé, on ne fait rien
+    if($('#installPatch').hasClass('disabled'))
+        return;
+    $('#installPatch').addClass("disabled");
+	
+    // On obtient d'abord les infos du fichier, tel que son nom et son poids
+	await downloadAndExtractZip("patch", 'patchID');
+	if($('#checkBox').is(':checked') && gameLoaded['voicesID'] != ""){
+		await downloadAndExtractZip("mod des voix", 'voicesID');
+		await downloadAndExtractZip("scénario doublé", 'voicedScriptID');
+	}
+	
     // On enregistre la version du patch installé ; on sauvegarde aussi les infos utilisateur en local (Dans %APPDATA%/config.json)
     dataUser['projects'][gameLoaded['name']]['patch'] = gameLoaded['patchVersion'];
     writeConfig();
@@ -576,8 +606,14 @@ async function downloadFile() {
     console.log("Patch téléchargé et extrait !");
 
     // On a terminé ! Bravo !
+	currentState = getCurrentState(); // on actualise l'état
+	updateGUI(currentState);
 }
 
+function isVoicePatchInstalled(){
+	return fs.existsSync(installationPath + "/voice/ed_voice.dll");
+}
+	
 // Permet d'extraire les archives .zip
 // TO-DO : Voir pour mettre un mot de passe aux archives, pour éviter le vol (?)
 async function fct(pathAbs){
@@ -608,12 +644,21 @@ async function fct(pathAbs){
       
         zipfile.readEntry();
         zipfile.on('entry', (entry) => {
-          const targetFile = finalPath + directorySeparator + entry.fileName;
-
+		  
+          var targetFile = finalPath + directorySeparator + entry.fileName;
+		  targetFile = targetFile.replace('/', directorySeparator);
+			
           if (entry.fileName.endsWith('/')) {
+			
             fs.mkdirSync(targetFile, { recursive: true });
             zipfile.readEntry();
           } else {
+			var parent_folder = targetFile.substring(0, targetFile.lastIndexOf(directorySeparator));
+			console.log("creating "+ targetFile)
+			if (!fs.existsSync(parent_folder)) {
+				console.log("creating "+ parent_folder)
+				fs.mkdirSync(parent_folder, { recursive: true });
+            }
             zipfile.openReadStream(entry, (err, readStream) => {
               if (err) throw err;
               
@@ -686,108 +731,84 @@ async function getFetch(url, method = "POST", args = {}, json = true){
 
     return result;
 }
+const { execSync } = require('child_process');
 
-async function getRegistryValue(regKey, data) {
-    return new Promise((resolve, reject) => {
-        
-        const command = spawn('REG', ['QUERY', regKey, '/v', data]);
+function getRegistryValue(regKey, data) {
+  try {
+    // Execute the REG QUERY command synchronously
+    const commandOutput = execSync(`REG QUERY "${regKey}" /v "${data}"`, { encoding: 'utf8' });
 
-        let installationPath = '';
-
-        command.stdout.on('data', (output) => {
-            installationPath += output.toString();
-        });
-        command.on('exit', (code) => {
-            // Check the exit code to determine if the key exists
-            if (code === 0) {
-                const match = installationPath.match(/REG_SZ\s+(.*)/);
-                const pathValue = match[1].trim();
-                resolve(pathValue);
-            } else {
-                // Registry key not found, GOG installation not detected
-                resolve(null);
-            }
-        });
-    });
+    // Check if the key exists
+    const match = commandOutput.match(/REG_SZ\s+(.*)/);
+    if (match) {
+      const pathValue = match[1].trim();
+      return pathValue;
+    } else {
+      // Registry key not found, GOG installation not detected
+      return null;
+    }
+  } catch (error) {
+    // Handle errors, such as when the registry key is not found
+    return null;
+  }
 }
 
 // TO-DO refactoriser la fonction, car celle-ci est vieille et peu optimisée !
 // Crédits : Ashley A. Sekai (C.R.X.)
-async function getGivenGame(game){
+function getGivenGame(game) {
+  let i = 0;
 
-    return new Promise((resolve, reject) => {
+  if (process.platform === 'win32') {
+    const steamRegistryKey = `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${game['steamId']}`;
+    const installationPath = getRegistryValue(steamRegistryKey, 'InstallLocation');
+    if (installationPath !== null) {
+      return installationPath;
+    } else {
+      const gogRegistryKey = `HKEY_LOCAL_MACHINE\\SOFTWARE\\GOG.com\\Games\\${game['GOGId']}`;
+      const gogInstallationPath = getRegistryValue(gogRegistryKey, 'path');
 
-    let i = 0;
+      if (gogInstallationPath !== null) {
+        return gogInstallationPath;
+      } else {
+        const pathsToCheck = [
+          "C:\\Program Files\\",
+          "C:\\Program Files (x86)\\",
+        ];
 
-    setTimeout(function() { // Si au bout de 10 secondes, le programme n'a pas pu trouver les dossiers, il passe à la suite, pour éviter un chargement infini
-        resolve(null);
-    }, 1000*10);
-
-    if (process.platform === 'win32') { // Si l'utilisateur est sous Windows
-	
-		getRegistryValue('HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ' + game['steamId'],'InstallLocation').then((installationPath) => {
-			if (installationPath !== null) {
-				resolve(installationPath)
-			} else {
-				
-				Key = 'HKEY_LOCAL_MACHINE\\SOFTWARE\\GOG.com\\Games\\' + game['GOGId']
-				
-				getRegistryValue(Key,'path').then((installationPath) => {
-					if (installationPath !== null) {
-						resolve(installationPath)
-					} else {
-						
-						const pathsToCheck = [
-							"C:\\Program Files\\",
-							"C:\\Program Files (x86)\\",
-						];
-						for (const path of pathsToCheck) {
-                            if (fs.existsSync(path + game['steamFolderName'])){
-                                resolve(path + game['steamFolderName']);
-                                return;
-							}
-                        }
-                        resolve(null);
-                        
-					}
-				});
-				
-			}
-		});
-		
-
-    } else if (os.homedir() != 'C:\\users\\steamuser') { // Sinon, il est sous Steam Deck
-		var list = [] 
-        if(!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf'))
-        {
-            list[0] = '/home/deck/.local/share/Steam/steamapps/common';
-            list[1] = '/home/steam/.local/share/Steam/steamapps/common';
-            list[2] = '/run/media/mmcblk0p1/steamapps/common';
+        for (const path of pathsToCheck) {
+          if (fs.existsSync(path + game['steamFolderName'])) {
+            return path + game['steamFolderName'];
+          }
         }
-        else
-        {
-            let listing = fs.readFileSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf').toString().split('"path"		');
-                listing.forEach((value, index) => {
-                    if(index > 0){
-                        list[i] = value.split('"')[1] + '/steamapps/common';
-                        i++;
-                    }
-                });
+      }
+    }
+  } else if (os.homedir() !== 'C:\\users\\steamuser') { // Assuming 'C:\\users\\steamuser' is a placeholder. Please adjust it accordingly.
+    const list = [];
+
+    if (!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf')) {
+      list[0] = '/home/deck/.local/share/Steam/steamapps/common';
+      list[1] = '/home/steam/.local/share/Steam/steamapps/common';
+      list[2] = '/run/media/mmcblk0p1/steamapps/common';
+    } else {
+      const listing = fs.readFileSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf').toString().split('"path"		');
+      listing.forEach((value, index) => {
+        if (index > 0) {
+          list[i] = value.split('"')[1] + '/steamapps/common';
+          i++;
         }
-		
-		
-		for (const path of list) {
-            if (fs.existsSync(path + game['steamFolderName'])){
-                resolve(path + game['steamFolderName']);
-                return;
-			}
-        }
-        resolve(null);
-		
+      });
     }
 
-    });
+    for (const path of list) {
+      if (fs.existsSync(path + game['steamFolderName'])) {
+        return path + game['steamFolderName'];
+      }
+    }
+  }
+
+  return null; // Return null if no suitable path is found
 }
+
 
 async function loopFolder(lines)
 {
