@@ -428,7 +428,6 @@ function getCurrentState(){
 		userVersion: userVersion,
 	};
 
-
 	if ((vp == false) && (document.getElementById('checkBox').checked)){
 		//besoin d'installer le patch des voix
 		state.voicePatchToBeInstalled = true
@@ -584,7 +583,8 @@ async function downloadFiles() {
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
 	await downloadAndExtractZip("patch", 'patchID');
 	if($('#checkBox').is(':checked') && gameLoaded['voicesID'] != ""){
-		await downloadAndExtractZip("mod des voix", 'voicesID');
+		if (currentState.voicePatchToBeInstalled)
+			await downloadAndExtractZip("mod des voix", 'voicesID');
 		await downloadAndExtractZip("scénario doublé", 'voicedScriptID');
 	}
 	
