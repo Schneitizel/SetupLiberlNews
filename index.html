@@ -2,7 +2,7 @@
             <div class="leftMenu">
                 <img class="logo" src="images/logo.png">
                 <button id="modeTrails" onclick="changeMode('trails')" class="active">Série "Trails"</button>
-                <button id="modeRetro" onclick="changeMode('retro')">Jeux rétros</button>
+                <button id="modeRetro" onclick="changeMode('retro')" disabled>Jeux rétros</button>
 
                 <span class="icon-container">
                     <i class="fa-solid fa-info"></i>
@@ -63,7 +63,7 @@
                             <input id="file" type="file" webkitdirectory directory/>
                             <div class="filePath">Aucun chemin d'accès spécifié</div>
                         </div>
-                        <div class="gauge"></div>
+                        <div class="gauge" id="projectBar"></div>
                     </div>
                     <div class="gameCredits">
                         <i onclick="displayCredits()" class="fa-solid fa-download"></i>
@@ -97,3 +97,14 @@
                 <div class="footer"></div>
             </div>
         </div>
+		<div class="popup-container" id="popupContainer">
+			<div class="popup-content">
+			  <h2>Nouvelle version disponible !</h2>
+			  <p>L'installateur a reçu une mise à jour. Souhaitez-vous l'installer ?</p>
+			  <button onclick="installUpdate()">Oui</button>
+			  <button onclick="closePopup()">Ignorer</button>
+			  <div id="loadingBarContainer" style="display: none;">
+				  <div class="gauge" id="loadingBar"></div>
+				</div>
+			</div>
+		</div>

@@ -392,7 +392,7 @@ button#installPatch.disabled {
     cursor: not-allowed;
 }
 
-.gauge {
+#projectBar {
     width: 90%;
     margin: 20px auto;
     padding: 4px;
@@ -407,7 +407,7 @@ button#installPatch.disabled {
     align-items: center;
 }
 
-.gauge::before {
+#projectBar::before {
     z-index: -1;
     background: #ffffff88;
     position: absolute;
@@ -564,3 +564,60 @@ i.fa-info:hover {
     -ms-transform: rotate(45deg);
     transform: rotate(45deg);
   }
+  
+  .popup-container {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+#loadingBarContainer {
+  margin-top: 20px;
+}
+
+#loadingBar {
+  height: 20px;
+  background-color: #4caf50; /* Green color for the loading bar */
+  width: 0; /* Initial width is 0, it will be updated dynamically */
+  transition: width 0.5s; /* Smooth transition for width changes */
+}
+
+#loadingBar {
+    width: 90%;
+    margin: 20px auto;
+    padding: 4px;
+    border: 1px solid black;
+    box-shadow: 2px 2px 0 #00000080;
+    height: 30px;
+    border-radius: 5px;
+    position: relative;
+    background: linear-gradient(to right, #3DB9F5 50% , #3DB9F500 50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#loadingBar::before {
+    z-index: -1;
+    background: #ffffff88;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    content: "";
+}

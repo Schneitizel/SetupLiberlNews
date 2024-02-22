@@ -1,6 +1,7 @@
 // Fichier secondaire lancé après le chargement de loading.html, et qui gère le code de l'application
 const $ = require('jquery'); // Le jQuery de base
 var Promise = require("bluebird"); // Gestion des promesses
+
 const { spawn } = require('node:child_process'); // Permet d'exécuter des commandes batch
 const os = require("os"); // Permet de récupérer des infos sur l'OS
 const EventEmitter = require('events'); // Nécessaire aux chargements
@@ -13,7 +14,6 @@ const fetch = require('node-fetch'); // Meilleure gestion de fetch (pour res.bod
 const StreamZip = require('node-stream-zip'); // Gestion des fichiers .zip, nombre de fichiers et méta-données
 const yauzl = require('yauzl'); // Gestion des fichiers .zip, extraction détaillée
 const path = require('path');
-
 const agent = new https.Agent({
     rejectUnauthorized: false,
 });
@@ -96,7 +96,7 @@ async function loadElements()
 
             Object.entries(value['games']).forEach(([keyGame, valueGame]) => {
                 let imageURL = "https://cdn.akamai.steamstatic.com/steam/apps/" + valueGame['steamId'] + "/header.jpg";
-                if(valueGame['steamId'] == -1) // Si le jeu est un jeu nom Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
+                if(valueGame['steamId'] == -1) // Si le jeu est un jeu non Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
                     imageURL = "images/" + valueGame['name'] + ".png";
 
                 if(valueGame['patchVersion'] != '0') // Si un patch est disponible, on l'affiche
@@ -133,6 +133,10 @@ async function loadElements()
         });
 
         writeConfig();
+		var setupVersion = compareVersions(version['version'], config["latestInstallerVersion"]);
+		if (setupVersion == 1){
+			 openPopup();
+		}
 }
 
 async function loadConfig()
@@ -217,8 +221,8 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('#uninstallAll').html("Désinstaller");
 	
     $('#checkVoice').css("display", "block");
-    $('.gauge').css("background", "linear-gradient(to right, #3DB9F5 0%, #3df5c2 0%, #3DB9F500 0%)");
-    $('.gauge').html("");
+    $('#projectBar').css("background", "linear-gradient(to right, #3DB9F5 0%, #3df5c2 0%, #3DB9F500 0%)");
+    $('#projectBar').html("");
 
     $('#file').prop('disabled', false);
 
@@ -464,22 +468,22 @@ function getCurrentState(){
 
 
 
-async function downloadAndExtractZip(name, ID) {
-    $('.gauge').html("Récupération des infos pour " + name + "...");
-    const url = 'https://www.googleapis.com/drive/v3/files/' + gameLoaded[ID] + '?key=' + config['ApiGD'];
+async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
+    gaugeObject.html("Récupération des infos pour " + name + "...");
+    const url = 'https://www.googleapis.com/drive/v3/files/' + ID + '?key=' + config['ApiGD'];
 
     try {
         const resultatWebVoices = await getFetch(url, 'GET', {}, false);
         if (resultatWebVoices['error'] !== undefined) {
-            $('.gauge').html('Erreur ' + resultatWebVoices['error']['code']).css('background', '#ff000080');
+            gaugeObject.html('Erreur ' + resultatWebVoices['error']['code']).css('background', '#ff000080');
             return;
         }
-		drawGauge(0);
-        $('.gauge').html("Récupération du zip de " + name + ". Veuillez patienter...");
+		drawGauge(0,gaugeObject);
+        gaugeObject.html("Récupération du zip de " + name + ". Veuillez patienter...");
 
         const res = await fetch(url + '&alt=media', { agent });
         const fileLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
-        const zipFilePath = filepath + directorySeparator + 'Liberl News' + directorySeparator + resultatWebVoices['name'];
+        const zipFilePath = __dirname + directorySeparator + resultatWebVoices['name'];
 
         let seconds = 0.0;
         let inter = setInterval(() => {
@@ -497,20 +501,20 @@ async function downloadAndExtractZip(name, ID) {
 
         const fileStream = fs.createWriteStream(zipFilePath);
         
-        $('.gauge').html('');
+        gaugeObject.html('');
         await new Promise((resolve, reject) => {
             res.body.pipe(fileStream);
 
             res.body.on('data', data => {
                 written += data.length;
                 const percent = (written / fileLength) * 100;
-                drawGauge(percent);
-                $('.gauge').html('Téléchargement - ' + percent.toFixed(2) + '% (' + formatBytes(speed) + ')');
+                drawGauge(percent,gaugeObject);
+                gaugeObject.html('Téléchargement - ' + percent.toFixed(2) + '% (' + formatBytes(speed) + ')');
             });
 
             res.body.on('error', err => {
                 console.error('ERREUR : ' + err);
-                $('.gauge').html('Téléchargement interrompu !').css('background', '#ff000080');
+                gaugeObject.html('Téléchargement interrompu !').css('background', '#ff000080');
                 reject(err);
             });
 
@@ -518,8 +522,8 @@ async function downloadAndExtractZip(name, ID) {
         });
         clearInterval(inter);
         clearInterval(calculSpeed);
-
-        await fct(zipFilePath);
+		
+        await fct(zipFilePath, outputFolder, gaugeObject);
 
         fs.unlink(zipFilePath, (err) => {
             if (err) {
@@ -541,6 +545,7 @@ function uninstall() {
 	$('#uninstallAll').html("Désinstaller");
 	
     const paths = gameLoaded['toBeUninstalled']
+	var countFile = 0;
 	for (var filePath of paths) {
 		
 		fullPath = installationPath + directorySeparator + filePath;
@@ -560,11 +565,12 @@ function uninstall() {
 				}
 
 				// Update gauge after each removal
-				drawGauge(/* calculate and provide the appropriate progress */);
-				$('.gauge').html(/* update the gauge text */);
+				drawGauge(countFile/paths.length, $('#projectBar'));
+				$('#projectBar').html(filePath + " supprimé");
 			} else {
 				console.log(`Path does not exist: ${filePath}`);
 			}
+			countFile = countFile + 1;
 		} catch (error) {
 			console.error(`Error removing ${filePath}: ${error.message}`);
 		}
@@ -575,8 +581,8 @@ function uninstall() {
     
 
     // On affiche dans la jauge que tout est ok
-    drawGauge(100);
-    $('.gauge').html('Patch supprimé !');
+    drawGauge(100,$('#projectBar'));
+    $('#projectBar').html('Patch supprimé !');
 
 	currentState = getCurrentState(); // on actualise l'état
 	updateGUI(currentState);
@@ -595,11 +601,11 @@ async function downloadFiles() {
     $('#installPatch').addClass("disabled");
 	
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
-	await downloadAndExtractZip("patch", 'patchID');
+	await downloadAndExtractZip("patch", gameLoaded['patchID'],$('#projectBar'), $('.filePath').html());
 	if($('#checkBox').is(':checked') && gameLoaded['voicesID'] != ""){
 		if (currentState.voicePatchToBeInstalled)
-			await downloadAndExtractZip("mod des voix", 'voicesID');
-		await downloadAndExtractZip("scénario doublé", 'voicedScriptID');
+			await downloadAndExtractZip("mod des voix", gameLoaded['voicesID'],$('#projectBar'), $('.filePath').html());
+		await downloadAndExtractZip("scénario doublé", gameLoaded['voicedScriptID'],$('#projectBar'), $('.filePath').html());
 	}
 	
     // On enregistre la version du patch installé ; on sauvegarde aussi les infos utilisateur en local (Dans %APPDATA%/config.json)
@@ -615,8 +621,8 @@ async function downloadFiles() {
     $('#installPatch').html("Installer");
 
     // On affiche dans la jauge que tout est ok
-    drawGauge(100);
-    $('.gauge').html('Patch téléchargé et installé !');
+    drawGauge(100,$('#projectBar'));
+    $('#projectBar').html('Patch téléchargé et installé !');
     console.log("Patch téléchargé et extrait !");
 
     // On a terminé ! Bravo !
@@ -630,13 +636,10 @@ function isVoicePatchInstalled(){
 	
 // Permet d'extraire les archives .zip
 // TO-DO : Voir pour mettre un mot de passe aux archives, pour éviter le vol (?)
-async function fct(pathAbs){
+async function fct(pathAbs, outputFolder, gaugeObject){
 
     // Le chemin absolu (F:/mon_dossier/mon_sous_dossier/fichier.zip) de l'archive .zip
     const zipFilePath = pathAbs;
-
-    // Le chemin absolu de l'endroit où l'archive sera extraite (Idéalement le dossier racine du jeu)
-    let finalPath = $('.filePath').html(); // T'as vu, ça c'est le turfu !
 
     // On obtient le nombre total de fichiers à extraire, et leurs poids
     const zip = new StreamZip.async({ file: pathAbs });
@@ -659,7 +662,7 @@ async function fct(pathAbs){
         zipfile.readEntry();
         zipfile.on('entry', (entry) => {
 		  
-          var targetFile = finalPath + directorySeparator + entry.fileName;
+          var targetFile = outputFolder + directorySeparator + entry.fileName;
 		  targetFile = targetFile.replace('/', directorySeparator);
 			
           if (entry.fileName.endsWith('/')) {
@@ -679,8 +682,8 @@ async function fct(pathAbs){
               readStream.on('data', (chunk) => {
                 bytesRead += chunk.length;
                 const progressPercentage = Math.round((bytesRead / totalEntriesBytes) * 100);
-                $('.gauge').html(progressPercentage + '%');
-                drawGauge(progressPercentage);
+                gaugeObject.html(progressPercentage + '%');
+                drawGauge(progressPercentage,gaugeObject);
               });
       
               readStream.on('end', () => {
@@ -705,12 +708,12 @@ async function fct(pathAbs){
 
 // Permet de "remplir" automatiquement la jauge de progression ; tout est déjà calculé
 // Mettre 0 pour la vider, 100 pour la remplir
-function drawGauge(percent = 0)
+function drawGauge(percent = 0, gaugeObject)
 {
     if(percent < 0) percent = 0;
     if(percent > 100) percent = 100;
 
-    $('.gauge').css("background", "linear-gradient(to right, #3DB9F5 " + percent/2 + "% , #48b2e5 " + percent + "%, transparent 1%)");
+    gaugeObject.css("background", "linear-gradient(to right, #3DB9F5 " + percent/2 + "% , #48b2e5 " + percent + "%, transparent 1%)");
 }
 
 // Permet de convertir une vitesse de téléchargement
@@ -842,4 +845,34 @@ async function loopFolder(lines)
                 resolve(text);
         }
     });
+}
+
+function openPopup() {
+  // Show the popup container
+  document.getElementById('popupContainer').style.display = 'flex';
+}
+
+function closePopup() {
+  // Hide the popup container
+  document.getElementById('popupContainer').style.display = 'none';
+}
+
+async function installUpdate() {
+	const popupContent = document.querySelector('.popup-content');
+	// Hide the buttons and show the loading bar container
+	document.querySelectorAll('.popup-content button').forEach(button => {
+	button.style.display = 'none';
+	});
+	document.getElementById('loadingBarContainer').style.display = 'block';
+	console.log(__dirname);
+	await downloadAndExtractZip("installateur", config['setupID'],$('#loadingBar'), __dirname);
+	drawGauge(100,$('#loadingBar'));
+	$('#loadingBar').html("Mise à jour terminée !");
+	const closeButton = document.createElement('button');
+	closeButton.textContent = 'Fermer';
+	closeButton.onclick = () => {
+	  closePopup(); 
+	};
+	
+	popupContent.appendChild(closeButton);
 }
