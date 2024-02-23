@@ -312,17 +312,21 @@ img.logo {
     flex-direction: column;
 }
 
-button#uninstallAll {
-    font-family: "Oswald";
-    padding: 5px 10px;
-    margin: 10px auto;
-    width: 50%;
-    display: block;
-    font-size: 1.5vw;
-    border: none;
-    background: white;
-    cursor: pointer;
-    transition: all 0.1s;
+.button-container {
+    display: flex;
+}
+
+#uninstallAll {
+    color: white;
+	padding: 5px 10px;
+	margin: 10px auto;
+	display: block;
+    transition: color 0.3s ease;
+	font-size: 24px;
+}
+
+#uninstallAll:hover {
+    color: red;
 }
 
 button#installPatch {

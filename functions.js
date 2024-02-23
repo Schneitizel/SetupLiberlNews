@@ -218,7 +218,6 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('#installPatch').html("Installer");
 
 	$('#uninstallAll').removeClass("disabled");
-    $('#uninstallAll').html("Désinstaller");
 	
     $('#checkVoice').css("display", "block");
     $('#projectBar').css("background", "linear-gradient(to right, #3DB9F5 0%, #3df5c2 0%, #3DB9F500 0%)");
@@ -540,6 +539,8 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
                 throw err;
             }
         });
+		$('#installPatch').removeClass("disabled");
+		$('#uninstallAll').removeClass("disabled");
 
     } catch (error) {
         console.error('Error:', error);
@@ -552,7 +553,6 @@ function uninstall() {
     if($('#uninstallAll').hasClass('disabled'))
         return;
 	$('#uninstallAll').addClass("disabled");
-	$('#uninstallAll').html("Désinstaller");
 	
     const paths = gameLoaded['toBeUninstalled']
 	var countFile = 0;
@@ -593,7 +593,7 @@ function uninstall() {
     // On affiche dans la jauge que tout est ok
     drawGauge(100,$('#projectBar'));
     $('#projectBar').html('Patch supprimé !');
-
+    
 	currentState = getCurrentState(); // on actualise l'état
 	updateGUI(currentState);
 }
@@ -609,6 +609,7 @@ async function downloadFiles() {
     if($('#installPatch').hasClass('disabled'))
         return;
     $('#installPatch').addClass("disabled");
+	$('#uninstallAll').addClass("disabled");
 	
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
 	await downloadAndExtractZip("patch", gameLoaded['patchID'],$('#projectBar'), $('.filePath').html());

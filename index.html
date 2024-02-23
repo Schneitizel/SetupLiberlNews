@@ -79,19 +79,21 @@
                                 • Version du patch installée :<br><span id="versionPatchInstalle">UNDEFINED</span><br>
                                 • Version du patch disponible :<br><span id="versionPatchDispo">UNDEFINED</span><br>
                             </div>
-							<button onclick="uninstall()" id="uninstallAll">
-								Désinstaller
-							</button>
+							
                             <label id="checkVoice" class="container">Inclure les voix de la version EVO
                                 <input id="checkBox" type="checkbox" checked="checked">
                                 <span class="checkmark"></span>
                             </label>
 							
                         </div>
-                        <button onclick="downloadFiles()" id="installPatch">
-                            Installer
-                        </button>
+						<div class="button-container">
+							<button onclick="downloadFiles()" id="installPatch">
+								Installer
+							</button>
+							<i onclick="uninstall()" class="fa-solid fa-trash" id="uninstallAll"></i>
+						</div>
                     </div>
+					
                 </div>
 
                 <div class="footer"></div>
