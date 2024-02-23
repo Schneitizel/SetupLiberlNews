@@ -377,17 +377,32 @@ function displayCredits()
 function updateGUI(currentState){
 	let color = "#6CDC3D";
 	
-	if (((currentState.patchState == 1) && (!currentState.voicePatchToBeInstalled))  || (currentState.patchState == 2) ||(currentState.voicePatchToBeInstalled)) //si mise à jour manquante c'est mise à jour.
-    {   
-		$('#installPatch').html("Mise à jour");
+	
+	
+	if ((currentState.patchState == 2) && (!currentState.voicePatchToBeInstalled)){ //seul le patch est à mettre à jour
 		
-    } else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1))
-	{
-		$('#installPatch').html("Installer");
+		$('#installPatch').html("Mettre à jour le patch");
 	}
-	else {
+	else if ((currentState.patchState == 1) && (!currentState.voicePatchToBeInstalled)) //le patch n'existe pas, les voix existent déjà
+	{
+		$('#installPatch').html("Installer patch");
+	}
+	else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //le patch est OK, mais pas les voix
+	{
+		$('#installPatch').html("Installer voix");
+	}
+	else if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //Tout est OK
+	{
 		color = "#ffffff";
 		$('#installPatch').addClass("disabled");
+	}
+	else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1)) //rien n'existe
+	{
+		$('#installPatch').html("Installer patch + voix");
+	}
+	else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 2)) //les voix n'existent pas et le patch est vieux
+	{
+		$('#installPatch').html("Mettre à jour patch et installer voix");
 	}
 	
 	
@@ -404,18 +419,13 @@ function updateGUI(currentState){
 		updateGUI(currentState);
 		$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
         $('#file').prop('disabled', true);
-			
-        /*let segments = document.getElementById("file").files[0].path.split("\\");
-        var nomDossier = segments[segments.length - 2];
-
-        if(nomDossier == gameLoaded['steamFolderName'] && compare != 3)
-        {
-            $('.filePath').removeClass("noPath").addClass("okPath").html(segments.slice(0, -1).join('\\'));
-            $('#file').prop('disabled', true);
-            $('#installPatch').removeClass("disabled");
-        }*/
     });
-
+	$('#checkVoice').on('change', async function( e ) {
+		
+		currentState = getCurrentState(); // on actualise l'état
+		updateGUI(currentState);
+    });
+	
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
     $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
 
@@ -456,7 +466,7 @@ function getCurrentState(){
 	}
 	else {
 		if (compare == 1){
-			state.patchState = 2; //mettre à jour uniquement (ça revient au même, juste le bouton change)
+			state.patchState = 2; 
 		}
 		else if (compare == 3)
 		{
