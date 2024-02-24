@@ -493,7 +493,13 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 
         const res = await fetch(url + '&alt=media', { agent });
         const fileLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
-        const zipFilePath = __dirname + directorySeparator + resultatWebVoices['name'];
+		
+		let currentDir = __dirname;
+		
+		if (currentDir.endsWith('.asar'))
+			currentDir = path.dirname(currentDir); //in a portable build dirrname is an archive so the download will fail
+		
+        const zipFilePath = currentDir + directorySeparator + resultatWebVoices['name'];
 
         let seconds = 0.0;
         let inter = setInterval(() => {
@@ -511,6 +517,7 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 
         const fileStream = fs.createWriteStream(zipFilePath);
         
+		console.log("currentDir" + currentDir)
         gaugeObject.html('');
         await new Promise((resolve, reject) => {
             res.body.pipe(fileStream);
@@ -532,7 +539,6 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
         });
         clearInterval(inter);
         clearInterval(calculSpeed);
-		
         await fct(zipFilePath, outputFolder, gaugeObject);
 
         fs.unlink(zipFilePath, (err) => {
@@ -993,14 +999,20 @@ async function installUpdate() {
 	button.style.display = 'none';
 	});
 	document.getElementById('loadingBarContainer').style.display = 'block';
+	let currentDir = __dirname;
+	
+	if (currentDir.endsWith('.asar'))
+		currentDir = path.dirname(currentDir); //in a portable build dirrname is an archive so the download will fail
+	
+		
 	console.log(__dirname);
-	await downloadAndExtractZip("installateur", config['setupID'],$('#loadingBar'), __dirname);
+	await downloadAndExtractZip("installateur", config['setupID'],$('#loadingBar'), currentDir);
 	drawGauge(100,$('#loadingBar'));
 	$('#loadingBar').html("Mise à jour terminée !");
 	const closeButton = document.createElement('button');
 	closeButton.textContent = 'Fermer';
 	closeButton.onclick = () => {
-	  closePopup(); 
+	  closeWindow('popupContainer'); 
 	};
 	
 	popupContent.appendChild(closeButton);
