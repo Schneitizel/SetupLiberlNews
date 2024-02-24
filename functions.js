@@ -87,7 +87,7 @@ async function loadElements()
 {
 
     let version = require('./package.json');
-    $('.setupVersion').html('Version ' + version['version']);
+    $('.setupVersion').html('Version de l\'installateur : ' + version['version']);
 
     $('.footer').html(config["footerText"]); // On affiche le message du footer
 
@@ -136,7 +136,7 @@ async function loadElements()
         writeConfig();
 		var setupVersion = compareVersions(version['version'], config["latestInstallerVersion"]);
 		if (setupVersion == 1){
-			 openPopup();
+			 openWindow("popupContainer");
 		}
 }
 
@@ -669,20 +669,20 @@ async function downloadFiles() {
 				if (isSteamRunning()){
 					var giveUp = false;
 					await new Promise((resolve) => {
-						openSteamPopup();
+						openWindow('steamWarning');
 
 						// You can resolve the Promise when the user clicks "Je continue" or "Abandonner"
 						// For example, you can have a button click event that resolves the Promise
 
 						// Example using a button click event
 						document.getElementById('continueButton').addEventListener('click', () => {
-							closeSteamPopup();
+							closeWindow('steamWarning');
 							resolve();
 						});
 
 						document.getElementById('giveUpButton').addEventListener('click', () => {
 							giveUp = true;
-							closeSteamPopup();
+							closeWindow('steamWarning');
 							$('#installPatch').removeClass("disabled");
 							$('#uninstallAll').removeClass("disabled");
 							currentState = getCurrentState(); // on actualise l'état
@@ -986,16 +986,6 @@ async function loopFolder(lines)
     });
 }
 
-function openPopup() {
-  // Show the popup container
-  document.getElementById('popupContainer').style.display = 'flex';
-}
-
-function closePopup() {
-  // Hide the popup container
-  document.getElementById('popupContainer').style.display = 'none';
-}
-
 async function installUpdate() {
 	const popupContent = document.querySelector('.popup-content');
 	// Hide the buttons and show the loading bar container
@@ -1017,32 +1007,21 @@ async function installUpdate() {
 }
 
 function isRunningOnSteamDeck() {
- try {
- let os = require("os");
- let info = `${os.type()} ${os.release()} ${os.platform()}`.toLowerCase();
- let list = ["valve", "steam"];
- return info.includes("linux") && list.some(x => info.includes(x));
- } catch (e) {
- return false;
- }
+	try {
+	let os = require("os");
+	let info = `${os.type()} ${os.release()} ${os.platform()}`.toLowerCase();
+	let list = ["valve", "steam"];
+	return info.includes("linux") && list.some(x => info.includes(x));
+	} catch (e) {
+	return false;
+	}
 }
-
-function openSteamPopup() {
-  document.getElementById('steamWarning').style.display = 'flex';
+function openWindow(windowID){
+	document.getElementById(windowID).style.display = 'flex';
 }
-
-function closeSteamPopup() {
-  document.getElementById('steamWarning').style.display = 'none';
+function closeWindow(windowID) {
+  document.getElementById(windowID).style.display = 'none';
 }
-
-function openHelp() {
-  document.getElementById('HelpWindow').style.display = 'flex';
-}
-
-function closeHelp() {
-  document.getElementById('HelpWindow').style.display = 'none';
-}
-
-function changeImage(imagePath) {
+function changeImageByPath(imagePath) {
     document.getElementById('helpButton').src = "./images/" + imagePath;
 }

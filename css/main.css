@@ -450,9 +450,9 @@ i.fa-info {
 
 i.fa-info:hover {
     color: white;
-    background: #000000cc;
+    background: #0000cccc;
 }
-
+/*
 .infos {
     display: none;
     position: absolute;
@@ -470,6 +470,9 @@ i.fa-info:hover {
 .fa-info:hover + .infos {
     display: block;
 }
+
+
+
 .setupVersion, .contact, .aide {
     border-bottom: 1px solid black;
     padding: 5px;
@@ -487,7 +490,7 @@ i.fa-info:hover {
 
 .aide {
     border-bottom: none;
-}
+}*/
 
 #desc span {
     margin-left: 15px;
@@ -663,10 +666,20 @@ i.fa-info:hover {
     text-align: center;
 }
 
-.separator {
+/* Vertical separator */
+.vertical-separator {
     width: 1px;
     background-color: #000; /* Adjust color as needed */
     margin: 0 20px; /* Adjust margin as needed */
+	
+}
+
+/* Horizontal separator */
+.horizontal-separator {
+    height: 1px;
+    background-color: #000; /* Adjust color as needed */
+    margin: 20px 0; /* Adjust margin as needed */
+    width: 100%; /* Full width */
 }
 
 .close-button {
@@ -677,4 +690,30 @@ i.fa-info:hover {
     border: none;
     cursor: pointer;
     font-size: 16px;
+}
+
+.horizontal-stack {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: none;
+  text-align: center;
+  z-index: 3;
+  display: flex;
+}
+
+.vertical-stack {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: none;
+  text-align: center;
+  z-index: 3;
+}
+
+.top-left,
+.top-right,
+.bottom {
+    /* Your styling for each section */
+    margin-bottom: 20px; /* Adjust margin as needed */
 }
