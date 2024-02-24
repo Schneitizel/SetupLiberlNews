@@ -1,7 +1,7 @@
 // Fichier secondaire lancé après le chargement de loading.html, et qui gère le code de l'application
 const $ = require('jquery'); // Le jQuery de base
 var Promise = require("bluebird"); // Gestion des promesses
-
+const VDF = require('./vdf'); // nécessaire pour lire et écraser le fichier vdf
 const { spawn } = require('node:child_process'); // Permet d'exécuter des commandes batch
 const os = require("os"); // Permet de récupérer des infos sur l'OS
 const EventEmitter = require('events'); // Nécessaire aux chargements
@@ -17,7 +17,6 @@ const path = require('path');
 const agent = new https.Agent({
     rejectUnauthorized: false,
 });
-
 // Variables globales
 
 var config;
@@ -53,6 +52,8 @@ loadingEvents.on('loaded', async () => {
         opacity: 1
     }, 1000);
 });
+
+
 
 $(document).ready(async function(){
 
@@ -598,9 +599,41 @@ function uninstall() {
 	updateGUI(currentState);
 }
 
+function isSteamRunning() {
+    const platform = process.platform;
+    let query = '';
+
+    switch (platform) {
+        case 'win32': query = 'steam.exe'; break;
+        case 'darwin': query = 'Steam.app'; break;
+        case 'linux': query = 'steam'; break;
+        default:
+            // Unsupported platform
+            return false;
+    }
+
+    let cmd = '';
+
+    switch (platform) {
+        case 'win32': cmd = 'tasklist'; break;
+        case 'darwin': cmd = `ps -ax | grep "${query}"`; break;
+        case 'linux': cmd = 'ps -A'; break;
+        default:
+            break;
+    }
+
+    try {
+        const stdout = execSync(cmd, { encoding: 'utf-8' });
+        return stdout.toLowerCase().indexOf(query.toLowerCase()) > -1;
+    } catch (err) {
+        // Handle errors if any (e.g., command not found)
+        return false;
+    }
+}
+
 // Lancé quand on appuie sur le bouton "Installer/Mise à jour"
 async function downloadFiles() {
-
+	
 	var currentState = getCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
 	console.log(currentState)
 	updateGUI(currentState);
@@ -608,8 +641,101 @@ async function downloadFiles() {
     // Si le bouton "Installer" est désactivé, on ne fait rien
     if($('#installPatch').hasClass('disabled'))
         return;
+	
     $('#installPatch').addClass("disabled");
 	$('#uninstallAll').addClass("disabled");
+	
+	// Avant toute chose en fait, il faut vérifier qu'on est sous Steam Deck pour override la dll dinput8 système avec notre dll ; 
+	//Note : on peut la faire pour tous les jeux, c'est pas grave (s'il la trouve pas à l'intérieur du dossier il fallback sur celle de wine)
+	//Note 2 : Quand Steam est ouvert il ne calcule plus localconfig.vdf (a priori il édite un fichier sur le cloud), et quand Steam est fermé 
+	//localconfig est remplacé par la version sur le cloud. Ce qui veut dire que si Steam est ouvert, impossible d'ajouter de LaunchOption pour override
+	//la dll puisqu'elle sera synchronisée avec le cloud à la prochaine fermeture (et de toute façon le changement sera pas effectif vu que Steam ne calcule 
+	//que le cloud tant qu'il est ouvert (Système de merde)
+	//la seule solution : fermer d'abord Steam puis éditer le vdf.
+	//dans ce cas il devrait appliquer la LaunchOption au fichier sur le cloud au démarrage.
+	//Note 3 : la moindre erreur dans le fichier vdf conduit Steam à supprimer la section problématique (ex : mettre des " à l'intérieur de " pour un string)
+	if (isRunningOnSteamDeck()){//
+		const steamUserFolder = "/home/deck/.local/share/Steam/userdata"
+		//const steamUserFolder = "C:\\Program Files (x86)\\Steam\\userdata"
+		const files = fs.readdirSync(steamUserFolder, { withFileTypes: true });
+		
+		
+		for (const file of files)  {
+			const fullPath = path.join(steamUserFolder, file.name);
+
+			if (file.isDirectory()) {
+				const userID = file.name;
+				
+				if (isSteamRunning()){
+					var giveUp = false;
+					await new Promise((resolve) => {
+						openSteamPopup();
+
+						// You can resolve the Promise when the user clicks "Je continue" or "Abandonner"
+						// For example, you can have a button click event that resolves the Promise
+
+						// Example using a button click event
+						document.getElementById('continueButton').addEventListener('click', () => {
+							closeSteamPopup();
+							resolve();
+						});
+
+						document.getElementById('giveUpButton').addEventListener('click', () => {
+							giveUp = true;
+							closeSteamPopup();
+							$('#installPatch').removeClass("disabled");
+							$('#uninstallAll').removeClass("disabled");
+							currentState = getCurrentState(); // on actualise l'état
+							updateGUI(currentState);
+							resolve();
+							
+							
+						});
+					});
+					if ((giveUp)) return;
+					
+					const command = process.platform === 'win32' ? 'taskkill' : 'pkill';
+					const args = process.platform === 'win32' ? ['/F', '/IM', 'steam.exe'] : ['steam'];
+
+					const steamProcess = spawn(command, args);
+
+					steamProcess.on('close', (code) => {
+					  if (code === 0) {
+						console.log('Steam has been closed successfully.');
+						// Proceed with your code after Steam is closed.
+					  } else {
+						console.error(`Failed to close Steam. Exit code: ${code}`);
+					  }
+					});
+
+					steamProcess.on('error', (err) => {
+					  console.error(`Error while trying to close Steam: ${err.message}`);
+					});
+				}
+
+				const vdfFilePath = steamUserFolder + directorySeparator + userID + directorySeparator + "config" + directorySeparator + "localconfig.vdf";
+				
+				const vdfContent = fs.readFileSync(vdfFilePath, 'utf8');
+				// Parse the .vdf content
+				const parsedData = VDF.parse(vdfContent);
+				
+				parsedData.get('UserLocalConfigStore')
+				.get('Software')
+				.get('Valve')
+				.get('Steam')
+				.get('apps')
+				.get(String(gameLoaded['steamId']))
+				.set('LaunchOptions', "WINEDLLOVERRIDES=\\\"dinput8=n,b\\\" %command%");
+				// Serialize the modified data back to .vdf format
+				const updatedVDFContent = VDF.stringify(parsedData, true);
+				//
+				//// Write the updated content back to the .vdf file
+				fs.writeFileSync(vdfFilePath, updatedVDFContent, 'utf8');
+			}
+		}
+	}
+	
+	
 	
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
 	await downloadAndExtractZip("patch", gameLoaded['patchID'],$('#projectBar'), $('.filePath').html());
@@ -627,16 +753,16 @@ async function downloadFiles() {
     $('#versionPatchInstalle').html('   ' + gameLoaded['patchVersion']);
     $('#versionPatchDispo').css('color', '#ffffff');
 
-    // On désactive le bouton de téléchargement, l'utilisateur vient d'avoir la dernière version
-    $('#installPatch').addClass("disabled");
-    $('#installPatch').html("Installer");
-
     // On affiche dans la jauge que tout est ok
     drawGauge(100,$('#projectBar'));
     $('#projectBar').html('Patch téléchargé et installé !');
     console.log("Patch téléchargé et extrait !");
 
     // On a terminé ! Bravo !
+	
+	$('#installPatch').removeClass("disabled");
+	$('#uninstallAll').removeClass("disabled");
+	
 	currentState = getCurrentState(); // on actualise l'état
 	updateGUI(currentState);
 }
@@ -810,7 +936,7 @@ function getGivenGame(game) {
         }
       }
     }
-  } else if (os.homedir() !== 'C:\\users\\steamuser') { // Assuming 'C:\\users\\steamuser' is a placeholder. Please adjust it accordingly.
+  } else if (isRunningOnSteamDeck()) { //On va juste gérer le steam deck, le reste c'est trop chiant
     const list = [];
 
     if (!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf')) {
@@ -826,12 +952,14 @@ function getGivenGame(game) {
         }
       });
     }
-
     for (const path of list) {
       if (fs.existsSync(path + game['steamFolderName'])) {
         return path + game['steamFolderName'];
       }
     }
+  }
+  else{
+		console.log("OS incompatible");
   }
 
   return null; // Return null if no suitable path is found
@@ -886,4 +1014,23 @@ async function installUpdate() {
 	};
 	
 	popupContent.appendChild(closeButton);
+}
+
+function isRunningOnSteamDeck() {
+ try {
+ let os = require("os");
+ let info = `${os.type()} ${os.release()} ${os.platform()}`.toLowerCase();
+ let list = ["valve", "steam"];
+ return info.includes("linux") && list.some(x => info.includes(x));
+ } catch (e) {
+ return false;
+ }
+}
+
+function openSteamPopup() {
+  document.getElementById('steamWarning').style.display = 'flex';
+}
+
+function closeSteamPopup() {
+  document.getElementById('steamWarning').style.display = 'none';
 }

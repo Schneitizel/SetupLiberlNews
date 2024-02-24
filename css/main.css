@@ -569,7 +569,7 @@ i.fa-info:hover {
     transform: rotate(45deg);
   }
   
-  .popup-container {
+.popup-container {
   display: none;
   position: fixed;
   top: 0;
@@ -579,6 +579,7 @@ i.fa-info:hover {
   background-color: rgba(0, 0, 0, 0.5);
   justify-content: center;
   align-items: center;
+  z-index: 3;
 }
 
 .popup-content {
@@ -587,6 +588,7 @@ i.fa-info:hover {
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   text-align: center;
+  z-index: 3;
 }
 
 #loadingBarContainer {
@@ -625,3 +627,4 @@ i.fa-info:hover {
     left: 0;
     content: "";
 }
+
