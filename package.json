@@ -5,18 +5,49 @@
   "main": "index.js",
   "scripts": {
     "test": "test",
-    "start": "electron ."
+    "start": "electron .",
+	"build": "electron-builder"
   },
   "author": "Schneitizel S. Sekai",
   "license": "ISC",
   "devDependencies": {
     "electron": "^28.1.4",
+    "electron-builder": "^24.12.0",
     "electron-packager": "^17.1.2"
   },
   "dependencies": {
     "jquery": "^3.7.1",
+    "bluebird": "^3.7.2",
     "node-fetch": "^2.6.7",
     "node-stream-zip": "^1.15.0",
     "yauzl": "^2.10.0"
+  },
+  "build": {
+    "appId": "com.liberlnews.installer",
+    "productName": "Installateur du Liberl News",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.js",
+      "functions.js",
+      "vdf.js",
+      "loading.html",
+      "jquery.min.js",
+	  "config.json",
+      "doc/*",
+      "css/*",
+	  "audio/**/*",
+      "images/**/*",
+	  "index.html"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    }
   }
 }
