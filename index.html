@@ -3,18 +3,16 @@
                 <img class="logo" src="images/logo.png">
                 <button id="modeTrails" onclick="changeMode('trails')" class="active">Série "Trails"</button>
                 <button id="modeRetro" onclick="changeMode('retro')" disabled>Jeux rétros</button>
-
+				
                 <span class="icon-container">
+					<img id="helpButton" src="./images/help_button.png" alt="Aide" onclick="openHelp()" onmouseover="changeImage('help_button2.png')" onmouseout="changeImage('help_button.png')">
                     <i class="fa-solid fa-info"></i>
                     <div class="infos">
                         <div class="setupVersion">
                             Version X.X.X.
                         </div>
                         <div class="contact">
-                            Contact
-                        </div>
-                        <div class="aide">
-                            Aide & support
+                            À propos
                         </div>
                     </div>
                 </span>
@@ -119,3 +117,29 @@
 			  <button id="giveUpButton">J'abandonne</button>
 			</div>
 		</div>
+		
+		<div class="popup-container" id="HelpWindow">
+		<div class="popup-content">
+			<h2>Se faire aider !</h2>
+
+			<div class="content-container">
+				<div class="image-container">
+					<a href="./doc/doc.pdf" target="_blank">
+						<img src="./images/PDF_file_icon.svg" alt="Consulter la liste des PDFs disponibles">
+					</a>
+					<p>Premier réflexe : consulter la base de tutoriels<br>et la FAQ pour trouver les réponses<br>à ses questions (souvent déjà posées).</p>
+				</div>
+
+				<div class="separator"></div>
+
+				<div class="image-container">
+					<a href="https://discord.gg/NaJMAs7rfn" target="_blank">
+						<img src="./images/discord.png" alt="Venez sur discord !">
+					</a>
+					<p>Si après quelques minutes de recherche<br> vous ne trouvez rien, venez expliquer<br>la situation sur le discord de l'équipe !</p>
+				</div>
+			</div>
+
+			<button class="close-button" onclick="closeHelp()">Fermer</button>
+		</div>
+</div>

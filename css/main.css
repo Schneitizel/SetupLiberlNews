@@ -95,7 +95,7 @@ body {
 .leftMenu {
     width: 12%;
     height: 100%;
-    padding: 20px 10px;
+    padding: 0;
     border: 1px solid black;
     background: #CFE2F3cc;
     display: flex;
@@ -103,12 +103,13 @@ body {
     text-align: center;
     box-shadow: 4px 0 10px 10px #00000070;
     z-index: 2;
+    
 }
 
 .leftMenu button {
     background: #3DB9F5;
     padding: 10px;
-    margin: 10px 0;
+    margin: 10px 10px;
     font-family: 'Averia';
     font-size: 85%;
     border-radius: 50px;
@@ -421,15 +422,19 @@ button#installPatch.disabled {
     left: 0;
     content: "";
 }
-
 .icon-container {
     position: relative;
-    cursor: pointer;
-    margin: 10px auto;
     display: flex;
-    align-self: flex-end;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    cursor: pointer;
+    margin-left: 0px; /* Adjust the left margin */
+    margin-right: 0px; /* Adjust the right margin */
     margin-top: auto;
+    margin-bottom: 10px; /* Adjust the margin as needed */
     padding: 0 2px;
+    border: none;
 }
 
 i.fa-info {
@@ -462,10 +467,9 @@ i.fa-info:hover {
     font-size: 1.35vw;
 }
 
-.icon-container:hover .infos {
+.fa-info:hover + .infos {
     display: block;
 }
-
 .setupVersion, .contact, .aide {
     border-bottom: 1px solid black;
     padding: 5px;
@@ -628,3 +632,49 @@ i.fa-info:hover {
     content: "";
 }
 
+@keyframes helpButtonAnimation {
+    0% { background-position: 0 0; }
+    100% { background-position: 0px 0; }
+}
+
+
+#helpButton {
+    position: relative;
+    cursor: pointer;
+    margin: 10px auto;
+    display: flex;
+    margin-top: auto;
+    padding: 0;
+    width: 120px;
+    height: 150px;
+    border: none;
+    animation: helpButtonAnimation 1s steps(4) infinite; /* Adjust the animation duration and steps */
+}
+
+
+.content-container {
+    display: flex;
+}
+
+.image-container img {
+	width: auto; /* Adjust the width as needed */
+    height: 200px; /* This ensures the aspect ratio is maintained */
+    flex: 1;
+    text-align: center;
+}
+
+.separator {
+    width: 1px;
+    background-color: #000; /* Adjust color as needed */
+    margin: 0 20px; /* Adjust margin as needed */
+}
+
+.close-button {
+    margin-top: 20px; /* Adjust margin as needed */
+    padding: 10px;
+    background-color: #007BFF; /* Adjust color as needed */
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}

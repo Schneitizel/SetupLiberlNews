@@ -1034,3 +1034,15 @@ function openSteamPopup() {
 function closeSteamPopup() {
   document.getElementById('steamWarning').style.display = 'none';
 }
+
+function openHelp() {
+  document.getElementById('HelpWindow').style.display = 'flex';
+}
+
+function closeHelp() {
+  document.getElementById('HelpWindow').style.display = 'none';
+}
+
+function changeImage(imagePath) {
+    document.getElementById('helpButton').src = "./images/" + imagePath;
+}
