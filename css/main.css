@@ -575,7 +575,6 @@ i.fa-info:hover {
     -ms-transform: rotate(45deg);
     transform: rotate(45deg);
   }
-  
 .popup-container {
   display: none;
   position: fixed;
@@ -595,7 +594,34 @@ i.fa-info:hover {
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   text-align: center;
+  position: relative; /* Added for positioning close button */
   z-index: 3;
+}
+
+.close-button {
+  border: none;
+  font-size: 24px;
+  display: inline-block;
+  padding: 8px 16px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  background-color: inherit;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
+  position: absolute;
+}
+
+.topright {
+  top: 0;
+  right: 0;
+}
+
+.content-container {
+  display: flex;
+  justify-content: space-between;
 }
 
 #loadingBarContainer {
@@ -682,16 +708,6 @@ i.fa-info:hover {
     width: 100%; /* Full width */
 }
 
-.close-button {
-    margin-top: 20px; /* Adjust margin as needed */
-    padding: 10px;
-    background-color: #007BFF; /* Adjust color as needed */
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-}
-
 .horizontal-stack {
   background-color: #fff;
   padding: 20px;
@@ -709,6 +725,7 @@ i.fa-info:hover {
   box-shadow: none;
   text-align: center;
   z-index: 3;
+  position: relative;
 }
 
 .top-left,

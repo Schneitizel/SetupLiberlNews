@@ -101,6 +101,7 @@
         </div>
 		<div class="popup-container" id="popupContainer">
 			<div class="popup-content">
+				<span onclick="closeWindow('popupContainer')" class="close-button topright">&times;</span>
 			  <h2>Nouvelle version disponible !</h2>
 			  <p>L'installateur a reçu une mise à jour. Souhaitez-vous l'installer ?</p>
 			  <button onclick="installUpdate()">Oui</button>
@@ -112,6 +113,7 @@
 		</div>
 		<div class="popup-container" id="steamWarning">
 			<div class="popup-content">
+				<span onclick="closeWindow('steamWarning')" class="close-button topright">&times;</span>
 			  <h2>Attention !</h2>
 			  <p>Steam doit être fermé afin de pouvoir installer le jeu sur Steam Deck.<br>
 			  Veillez bien à sauvegarder tout progrès en cours avant de continuer.</p>
@@ -121,40 +123,39 @@
 		</div>
 		
 		<div class="popup-container" id="HelpWindow">
-			<div class="popup-content">
-				<h2>Se faire aider !</h2>
+		  <div class="popup-content">
+			<span onclick="closeWindow('HelpWindow')" class="close-button topright">&times;</span>
+			<h2>Se faire aider !</h2>
 
-				<div class="content-container">
-					<div class="image-container">
-						<a href="./doc/doc.pdf" target="_blank">
-							<img src="./images/PDF_file_icon.svg" alt="Consulter la liste des PDFs disponibles">
-						</a>
-						<p>Premier réflexe : consulter la base de tutoriels<br>et la FAQ pour trouver les réponses<br>à ses questions (souvent déjà posées).</p>
-					</div>
+			<div class="content-container">
+			  <div class="image-container">
+				<a href="./doc/doc.pdf" target="_blank">
+				  <img src="./images/PDF_file_icon.svg" alt="Consulter la liste des PDFs disponibles">
+				</a>
+				<p>Premier réflexe : consulter la base de tutoriels<br>et la FAQ pour trouver les réponses<br>à ses questions (souvent déjà posées).</p>
+			  </div>
 
-					<div class="vertical-separator"></div>
+			  <div class="vertical-separator"></div>
 
-					<div class="image-container">
-						<a href="https://discord.gg/NaJMAs7rfn" target="_blank">
-							<img src="./images/discord.png" alt="Venez sur discord !">
-						</a>
-						<p>Si après quelques minutes de recherche<br> vous ne trouvez rien, venez expliquer<br>la situation sur le discord de l'équipe !</p>
-					</div>
-				</div>
-
-				<button class="close-button" onclick="closeWindow('HelpWindow')">Fermer</button>
+			  <div class="image-container">
+				<a href="https://discord.gg/NaJMAs7rfn" target="_blank">
+				  <img src="./images/discord.png" alt="Venez sur discord !">
+				</a>
+				<p>Si après quelques minutes de recherche<br> vous ne trouvez rien, venez expliquer<br>la situation sur le discord de l'équipe !</p>
+			  </div>
 			</div>
+		  </div>
 		</div>
 		<div class="popup-container" id="InfoWindow">
 			<div class="vertical-stack">
+				<span onclick="closeWindow('InfoWindow')" class="close-button topright">&times;</span>
 				<div class="horizontal-stack">
 					<div class="top-left">
 						<h2>Quelques recommandations</h2>
 						<p>Pour en savoir plus sur la série "Trails" :<br>Future vidéo de Kouryu 
 						<br><br>
-						Et pour discuter de la série :
-						<br><br>
-						Discord Trails of France : <a href="https://discord.gg/TcPZs4gvfU" target="_blank"><i class="fab fa-discord fa-2x"></i></a>
+						Et pour discuter de la série,<br>rejoignez le discord Trails of France :
+						<br><br><a href="https://discord.gg/TcPZs4gvfU" target="_blank"><i class="fab fa-discord fa-2x"></i></a>
 						</p>
 					</div>
 
@@ -162,13 +163,13 @@
 
 					<div class="top-right">
 						<h2>Ils traduisent aussi Falcom...</h2>
-						<p>Nanami (Ys) : <br> <a href="url">https://nanami-ys.fr</a> <br>Le C.R.X. (Tokyo Xanadu) : <br> <a href="url">https://twitter.com/CRXTraductions</a></p>
+						<p>Nanami (Ys) : <br> <a href="https://nanami-ys.fr" target="_blank">Page de Nanami</a> <br>Le C.R.X. (Tokyo Xanadu) : <br> <a href="https://twitter.com/CRXTraductions" target="_blank">Page X du C.R.X.</a></p>
 					</div>
 				</div>
 				<div class="horizontal-separator"></div>
 
 				<div class="bottom">
-					<p>Merci à Schneitizel S. Sekai pour le développement de cet installateur. <br>Le code source est trouvable sur sa page Github : <br><a href="url">https://github.com/Schneitizel/SetupLiberlNews</a> </p>
+					<p>Merci à Schneitizel S. Sekai pour le développement de cet installateur. <br>Le code source est trouvable sur sa page Github : <br><a href="https://github.com/Schneitizel/SetupLiberlNews" target="_blank">Github</a> </p>
 					<div class="setupVersion">
                         Version de l'installateur : X.X.X.
                     </div>
@@ -180,7 +181,6 @@
     
 					</div>
 				</div>
-				<button class="close-button" onclick="closeWindow('InfoWindow')">Fermer</button>
 			</div>
 			
 		</div>

@@ -300,7 +300,7 @@ function changeImage(num = 1)
 // Permet de passer des jeux Trails aux jeux rétro, et inversement
 function changeMode(mode = 'trails')
 {
-
+	goHome();
     if($('.displayGame').css('display') != 'none')
         return;
 
@@ -418,7 +418,6 @@ function updateGUI(currentState){
 		currentState = getCurrentState(); // on actualise l'état
 		updateGUI(currentState);
 		$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
-        $('#file').prop('disabled', true);
     });
 	$('#checkVoice').on('change', async function( e ) {
 		
