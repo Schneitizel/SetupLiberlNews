@@ -249,7 +249,6 @@ function openProject(type = "trails", id = "Sky", game = 0)
 	soit le patch est installé mais pas les voix, mais la case est cocheé => on installe les voix
 	si y a un problème à un quelconque moment l'utilisateur peut cliquer sur un bouton désinstaller qui va enlever voix et patch (table rase). ensuite il pourra cocher la case des voix et installer et ça lui donnera voix et patch*/
     const currentState = getCurrentState();
-	console.log("current state: ", currentState);
 	updateGUI(currentState);
 
 	
@@ -998,12 +997,8 @@ async function installUpdate() {
 	button.style.display = 'none';
 	});
 	document.getElementById('loadingBarContainer').style.display = 'block';
-	let currentDir = __dirname;
+	const currentDir = path.dirname(process.execPath);;
 	
-	if (currentDir.endsWith('.asar'))
-		currentDir = path.dirname(currentDir); //in a portable build dirrname is an archive so the download will fail
-	
-		
 	console.log(__dirname);
 	await downloadAndExtractZip("installateur", config['setupID'],$('#loadingBar'), currentDir);
 	drawGauge(100,$('#loadingBar'));
