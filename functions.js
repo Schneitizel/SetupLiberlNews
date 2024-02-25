@@ -1036,3 +1036,15 @@ function closeWindow(windowID) {
 function changeImageByPath(imagePath) {
     document.getElementById('helpButton').src = "./images/" + imagePath;
 }
+
+//demandé par Aisoce : toutes les popup qui sont juste informatives, on doit pouvoir les fermer en cliquant dans le vide
+window.onclick = function(event) {
+  var modalIds = ["popupContainer", "HelpWindow", "InfoWindow"];
+
+  for (var i = 0; i < modalIds.length; i++) {
+    var modal = document.getElementById(modalIds[i]);
+    if (modal && event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+}
