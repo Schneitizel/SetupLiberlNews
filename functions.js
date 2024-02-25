@@ -17,6 +17,7 @@ const path = require('path');
 const agent = new https.Agent({
     rejectUnauthorized: false,
 });
+const { shell } = require('electron');
 // Variables globales
 
 var config;
@@ -56,7 +57,7 @@ loadingEvents.on('loaded', async () => {
 
 
 $(document).ready(async function(){
-
+	
     await loadConfig();
 
     // On vide le dossier pour éviter les fichiers résiduels
@@ -134,10 +135,12 @@ async function loadElements()
         });
 
         writeConfig();
+		/*
 		var setupVersion = compareVersions(version['version'], config["latestInstallerVersion"]);
 		if (setupVersion == 1){
 			 openWindow("popupContainer");
-		}
+		}*/ 
+		//Pas d'autoupdate, c'est impossible en version portable
 }
 
 async function loadConfig()
@@ -401,29 +404,11 @@ function updateGUI(currentState){
 	}
 	else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 2)) //les voix n'existent pas et le patch est vieux
 	{
-		$('#installPatch').html("Mettre à jour patch et installer voix");
+		$('#installPatch').html("MàJ patch et installer voix");
 	}
 	
 	
-    $('#file').on('change', async function( e ) {
-		installationPath = document.getElementById("file").files[0].path
-		const stats = fs.statSync(installationPath);
-
-		if (stats.isFile()) {
-		  installationPath = path.dirname(installationPath);
-		}
-	  
-		console.log(installationPath)
-		currentState = getCurrentState(); // on actualise l'état
-		updateGUI(currentState);
-		$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
-    });
-	$('#checkVoice').on('change', async function( e ) {
-		
-		currentState = getCurrentState(); // on actualise l'état
-		updateGUI(currentState);
-    });
-	
+    
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
     $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
 
@@ -477,7 +462,7 @@ function getCurrentState(){
 
 
 async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
-    gaugeObject.html("Récupération des infos pour " + name + "...");
+    gaugeObject.html("Récupération des infos sur " + name + "...");
     const url = 'https://www.googleapis.com/drive/v3/files/' + ID + '?key=' + config['ApiGD'];
 
     try {
@@ -487,7 +472,7 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
             return;
         }
 		drawGauge(0,gaugeObject);
-        gaugeObject.html("Récupération du zip de " + name + ". Veuillez patienter...");
+        gaugeObject.html("Récupération du zip de " + name + ".");
 
         const res = await fetch(url + '&alt=media', { agent });
         const fileLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
@@ -515,7 +500,6 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 
         const fileStream = fs.createWriteStream(zipFilePath);
         
-		console.log("currentDir" + currentDir)
         gaugeObject.html('');
         await new Promise((resolve, reject) => {
             res.body.pipe(fileStream);
@@ -997,9 +981,7 @@ async function installUpdate() {
 	button.style.display = 'none';
 	});
 	document.getElementById('loadingBarContainer').style.display = 'block';
-	const currentDir = path.dirname(process.execPath);;
-	
-	console.log(__dirname);
+	let currentDir = process.env.PORTABLE_EXECUTABLE_DIR;
 	await downloadAndExtractZip("installateur", config['setupID'],$('#loadingBar'), currentDir);
 	drawGauge(100,$('#loadingBar'));
 	$('#loadingBar').html("Mise à jour terminée !");
@@ -1034,7 +1016,7 @@ function changeImageByPath(imagePath) {
 
 //demandé par Aisoce : toutes les popup qui sont juste informatives, on doit pouvoir les fermer en cliquant dans le vide
 window.onclick = function(event) {
-  var modalIds = ["popupContainer", "HelpWindow", "InfoWindow"];
+  var modalIds = ["HelpWindow", "InfoWindow"];
 
   for (var i = 0; i < modalIds.length; i++) {
     var modal = document.getElementById(modalIds[i]);
@@ -1042,4 +1024,27 @@ window.onclick = function(event) {
       modal.style.display = "none";
     }
   }
+}
+
+	
+	
+function openinDefaultBrowser(url) {
+    shell.openExternal(url);
+}
+function onChangePath() {
+    installationPath = document.getElementById("file").files[0].path
+	const stats = fs.statSync(installationPath);
+
+	if (stats.isFile()) {
+	  installationPath = path.dirname(installationPath);
+	}
+	
+	console.log(installationPath)
+	currentState = getCurrentState(); // on actualise l'état
+	updateGUI(currentState);
+	$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
+}
+function onChangeCheckbox() {
+    currentState = getCurrentState(); // on actualise l'état
+	updateGUI(currentState);
 }
