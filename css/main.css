@@ -717,3 +717,8 @@ i.fa-info:hover {
     /* Your styling for each section */
     margin-bottom: 20px; /* Adjust margin as needed */
 }
+
+#loadingImage {
+    max-width: 100%; /* Set the maximum width to 100% of its container */
+    height: auto; /* Allow the height to adjust proportionally */
+}
