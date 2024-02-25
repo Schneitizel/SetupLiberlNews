@@ -135,11 +135,11 @@ async function loadElements()
         });
 
         writeConfig();
-		/*
+		
 		var setupVersion = compareVersions(version['version'], config["latestInstallerVersion"]);
 		if (setupVersion == 1){
 			 openWindow("popupContainer");
-		}*/ 
+		} 
 		//Pas d'autoupdate, c'est impossible en version portable
 }
 

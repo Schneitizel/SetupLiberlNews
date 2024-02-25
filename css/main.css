@@ -97,7 +97,7 @@ body {
     height: 100%;
     padding: 0;
     border: 1px solid black;
-    background: #CFE2F3cc;
+    background: #C4680Fcc;
     display: flex;
     flex-direction: column;
     text-align: center;
@@ -585,24 +585,31 @@ i.fa-info:hover {
   background-color: rgba(0, 0, 0, 0.5);
   justify-content: center;
   align-items: center;
+  
   z-index: 3;
 }
 
 .popup-content {
-  background-color: #fff;
+  /*background-color: #fff;*/
+  background-color: transparent;
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  /*box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);*/
   text-align: center;
   position: relative; /* Added for positioning close button */
   z-index: 3;
+	background-image: url("../images/bulle.svg");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  color: white;
+  
 }
 
 .close-button {
   border: none;
   font-size: 24px;
   display: inline-block;
-  padding: 8px 16px;
+  padding: 3% 7%;
   vertical-align: middle;
   overflow: hidden;
   text-decoration: none;
@@ -695,7 +702,7 @@ i.fa-info:hover {
 /* Vertical separator */
 .vertical-separator {
     width: 1px;
-    background-color: #000; /* Adjust color as needed */
+    background-color: #fff; /* Adjust color as needed */
     margin: 0 20px; /* Adjust margin as needed */
 	
 }
@@ -703,13 +710,13 @@ i.fa-info:hover {
 /* Horizontal separator */
 .horizontal-separator {
     height: 1px;
-    background-color: #000; /* Adjust color as needed */
+    background-color: #fff; /* Adjust color as needed */
     margin: 20px 0; /* Adjust margin as needed */
     width: 100%; /* Full width */
 }
 
 .horizontal-stack {
-  background-color: #fff;
+  background-color: transparent;
   padding: 20px;
   border-radius: 5px;
   box-shadow: none;
@@ -739,3 +746,5 @@ i.fa-info:hover {
     max-width: 100%; /* Set the maximum width to 100% of its container */
     height: auto; /* Allow the height to adjust proportionally */
 }
+
+
