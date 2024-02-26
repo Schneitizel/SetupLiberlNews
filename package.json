@@ -1,12 +1,13 @@
 {
   "name": "setupliberlnews",
-  "version": "1.0.0",
+  "version": "0.9.10",
   "description": "Installateur de patchs pour l'équipe du Liberl News",
   "main": "index.js",
+  "bin": "./index.js",
   "scripts": {
     "test": "test",
     "start": "electron .",
-	"build": "electron-builder"
+	  "build": "electron-builder"
   },
   "author": "Schneitizel S. Sekai",
   "license": "ISC",
@@ -34,13 +35,17 @@
       "vdf.js",
       "loading.html",
       "jquery.min.js",
-	  "config.json",
+      "config.json",
       "doc/*",
       "css/*",
-	  "audio/**/*",
+      "audio/**/*",
       "images/**/*",
-	  "index.html"
+      "index.html"
     ],
+	"portable": {
+		"useZip": true,
+		"splashImage": "./images/splash.bmp" 
+	},
     "win": {
       "target": [
         {

@@ -1,6 +1,7 @@
 // Fichier secondaire lancé après le chargement de loading.html, et qui gère le code de l'application
 const $ = require('jquery'); // Le jQuery de base
 var Promise = require("bluebird"); // Gestion des promesses
+const VDF = require('./vdf'); // nécessaire pour lire et écraser le fichier vdf
 const { spawn } = require('node:child_process'); // Permet d'exécuter des commandes batch
 const os = require("os"); // Permet de récupérer des infos sur l'OS
 const EventEmitter = require('events'); // Nécessaire aux chargements
@@ -12,13 +13,13 @@ const fetch = require('node-fetch'); // Meilleure gestion de fetch (pour res.bod
     // TO-DO : Trouver ou créer un framework unique qui fait les deux
 const StreamZip = require('node-stream-zip'); // Gestion des fichiers .zip, nombre de fichiers et méta-données
 const yauzl = require('yauzl'); // Gestion des fichiers .zip, extraction détaillée
-
+const path = require('path');
 const agent = new https.Agent({
     rejectUnauthorized: false,
 });
-
+const { shell } = require('electron');
 // Variables globales
-
+var currentState;
 var config;
 var projectsList;
 
@@ -37,7 +38,6 @@ var directorySeparator;
 
 var installationPath = null;
 
-
 if (process.platform === 'win32') {
     filepath = process.env.APPDATA;
     directorySeparator = '\\';
@@ -45,7 +45,7 @@ if (process.platform === 'win32') {
     filepath = os.homedir();
     directorySeparator = '/';
 }
-
+var counting = false;
 loadingEvents.on('loaded', async () => {
     // Affiche la fenêtre principale en fondu d'ouverture (Default : 1000ms/1s)
     $('.mainWindow').animate({
@@ -53,8 +53,10 @@ loadingEvents.on('loaded', async () => {
     }, 1000);
 });
 
-$(document).ready(async function(){
 
+
+$(document).ready(async function(){
+	
     await loadConfig();
 
     // On vide le dossier pour éviter les fichiers résiduels
@@ -71,21 +73,20 @@ $(document).ready(async function(){
     {
         document.getElementById('startSound').play();
     }
-
     // Charge le fichier index.html, la fenêtre principale en gros, après 1.150 seconde (Le temps que l'animation ait fini)
-    setTimeout(function(){
+    //setTimeout(function(){
         $('.main').load('index.html', function() {
             loadElements();
             loadingEvents.emit('loaded'); // On affiche la page !
         });
-    }, 1150);
+    //}, 1150);
 });
 
 async function loadElements()
 {
 
     let version = require('./package.json');
-    $('.setupVersion').html('Version ' + version['version']);
+    $('.setupVersion').html('Version de l\'installateur : ' + version['version']);
 
     $('.footer').html(config["footerText"]); // On affiche le message du footer
 
@@ -95,7 +96,7 @@ async function loadElements()
 
             Object.entries(value['games']).forEach(([keyGame, valueGame]) => {
                 let imageURL = "https://cdn.akamai.steamstatic.com/steam/apps/" + valueGame['steamId'] + "/header.jpg";
-                if(valueGame['steamId'] == -1) // Si le jeu est un jeu nom Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
+                if(valueGame['steamId'] == -1) // Si le jeu est un jeu non Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
                     imageURL = "images/" + valueGame['name'] + ".png";
 
                 if(valueGame['patchVersion'] != '0') // Si un patch est disponible, on l'affiche
@@ -132,6 +133,12 @@ async function loadElements()
         });
 
         writeConfig();
+		
+		var setupVersion = compareVersions(version['version'], config["latestInstallerVersion"]);
+		if (setupVersion == 1){
+			 openWindow("popupContainer");
+		} 
+		//Pas d'autoupdate, c'est impossible en version portable
 }
 
 async function loadConfig()
@@ -213,11 +220,10 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('#installPatch').html("Installer");
 
 	$('#uninstallAll').removeClass("disabled");
-    $('#uninstallAll').html("Désinstaller");
 	
     $('#checkVoice').css("display", "block");
-    $('.gauge').css("background", "linear-gradient(to right, #3DB9F5 0%, #3df5c2 0%, #3DB9F500 0%)");
-    $('.gauge').html("");
+    $('#projectBar').css("background", "linear-gradient(to right, #3DB9F5 0%, #3df5c2 0%, #3DB9F500 0%)");
+    $('#projectBar').html("");
 
     $('#file').prop('disabled', false);
 
@@ -243,9 +249,8 @@ function openProject(type = "trails", id = "Sky", game = 0)
 	soit les voix sont installées mais pas le patch => on installe le patch
 	soit le patch est installé mais pas les voix, mais la case est cocheé => on installe les voix
 	si y a un problème à un quelconque moment l'utilisateur peut cliquer sur un bouton désinstaller qui va enlever voix et patch (table rase). ensuite il pourra cocher la case des voix et installer et ça lui donnera voix et patch*/
-    const currentState = getCurrentState();
-	console.log("current state: ", currentState);
-	updateGUI(currentState);
+    updateCurrentState();
+	updateGUI();
 
 	
     menu.animate({
@@ -295,7 +300,7 @@ function changeImage(num = 1)
 // Permet de passer des jeux Trails aux jeux rétro, et inversement
 function changeMode(mode = 'trails')
 {
-
+	goHome();
     if($('.displayGame').css('display') != 'none')
         return;
 
@@ -368,53 +373,144 @@ function displayCredits()
         $('.gameCredits').css('display', 'none');
     }
 }
+function calculateTimeRemaining(targetDate) {
+    // Parse the target date string into a JavaScript Date object
+    const targetDateTime = new Date(targetDate).getTime();
+    
+    // Get the current time
+    const now = new Date().getTime();
 
-function updateGUI(currentState){
-	let color = "#6CDC3D";
-	
-	if (((currentState.patchState == 1) && (!currentState.voicePatchToBeInstalled))  || (currentState.patchState == 2) ||(currentState.voicePatchToBeInstalled)) //si mise à jour manquante c'est mise à jour.
-    {   
-		$('#installPatch').html("Mise à jour");
-		
-    } else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1))
-	{
-		$('#installPatch').html("Installer");
-	}
-	else {
-		color = "#ffffff";
-		$('#installPatch').addClass("disabled");
-	}
-	
-	
-    /*$('#file').on('change', async function( e ) {
-        let segments = document.getElementById("file").files[0].path.split("\\");
-        var nomDossier = segments[segments.length - 2];
+    // Calculate the time difference in milliseconds
+    const timeDifference = targetDateTime - now;
 
-        if(nomDossier == gameLoaded['steamFolderName'] && compare != 3)
-        {
-            $('.filePath').removeClass("noPath").addClass("okPath").html(segments.slice(0, -1).join('\\'));
-            $('#file').prop('disabled', true);
-            $('#installPatch').removeClass("disabled");
+    if (timeDifference > 0) {
+        if (timeDifference < 60 * 60 * 1000) { // Less than 1 hour
+            // Calculate minutes and seconds remaining
+            const minutes = Math.floor(timeDifference / (1000 * 60));
+            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+            // Create a formatted string
+            const resultString = `Dans ${minutes} minutes et ${seconds} secondes`;
+            return resultString;
+        } else if (timeDifference < 24 * 60 * 60 * 1000) { // Less than 24 hours
+            // Calculate hours and minutes remaining
+            const hours = Math.floor(timeDifference / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+
+            // Create a formatted string
+            const resultString = `Dans ${hours} heures et ${minutes} minutes`;
+            return resultString;
+        } else {
+            // Calculate days and hours remaining
+            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+            // Create a formatted string
+            const resultString = `Dans ${days} jours et ${hours} heures`;
+            return resultString;
         }
-    });*/
+    } else {
+        return "";
+    }
+}
 
+function calculateAndDisplayTimeRemaining(targetDate) {
+    // Function to calculate the remaining time and update the display
+    function updateDisplay() {
+        const remainingTime = calculateTimeRemaining(targetDate);
+        
+		if (counting){
+			if (remainingTime == ""){
+				updateCurrentState();
+				updateGUI();
+				counting = false;
+			}
+			else
+				$('#installPatch').html(remainingTime);
+		}
+    }
+
+    // Set up a setInterval to refresh the display every second
+    const intervalId = setInterval(() => {
+        if (!counting) {
+            clearInterval(intervalId); // Stop the interval if the button state changes
+			
+        } else {
+            updateDisplay(); // Otherwise, update the display
+        }
+    }, 1000);
+
+    // Optionally, you can return the intervalId if you want to be able to clearInterval later
+    return intervalId;
+}
+
+function updateGUI(){
+	let color = "#6CDC3D";
+	$('#installPatch').removeClass("disabled");
+	if (!currentState.isThereACountdown){
+		counting = false;
+		
+		if ((currentState.patchState == 2) && (!currentState.voicePatchToBeInstalled)){ //seul le patch est à mettre à jour
+			$('#installPatch').html("Mettre à jour le patch");
+		}
+		else if ((currentState.patchState == 1) && (!currentState.voicePatchToBeInstalled)) //le patch n'existe pas, les voix existent déjà
+		{
+			$('#installPatch').html("Installer patch");
+		}
+		else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //le patch est OK, mais pas les voix
+		{
+			$('#installPatch').html("Installer voix");
+		}
+		else if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //Tout est OK
+		{
+			//$('#installPatch').addClass("disabled");
+			$('#installPatch').html("Lancer le jeu");
+		}
+		else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1)) //rien n'existe
+		{
+			$('#installPatch').html("Installer patch + voix");
+		}
+		else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 2)) //les voix n'existent pas et le patch est vieux
+		{
+			$('#installPatch').html("MàJ patch et installer voix");
+		}
+	} else {
+		
+		if (currentState.voicePatchToBeInstalled){
+			$('#installPatch').html("Préinstaller les voix");
+			counting = false;
+		}
+		else{
+			if (!counting)
+				calculateAndDisplayTimeRemaining(gameLoaded["releaseDate"]);
+			counting = true;
+			$('#installPatch').addClass("disabled");
+		}
+		
+	}
+    
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
     $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
 
 	
 }
 
-function getCurrentState(){
+function updateCurrentState(){
 	
 	const vp = isVoicePatchInstalled();
+	
+	let releaseDate = "";
 	
 	let userVersion = "Aucune"
 	if (installationPath !== null){
 		
 		const versions_path = installationPath + "/data_fr/system/versions.json";
+		
 		if(fs.existsSync(versions_path)){
+			delete require.cache[require.resolve(versions_path)];
 			versions = require(versions_path);
 			userVersion = versions['current_patch_id'];
+			$('#versionPatchInstalle').html('   ' + userVersion);
 		} 
 			
 	}
@@ -426,46 +522,64 @@ function getCurrentState(){
 		voicePatchToBeInstalled: false,
 		patchState: 0,
 		userVersion: userVersion,
+		isThereACountdown: false
 	};
-
+    
+	if (gameLoaded.hasOwnProperty('releaseDate')){
+		releaseDate = new Date(gameLoaded['releaseDate']);	
+		if (!isNaN(releaseDate.getTime()))
+		{
+			let remainingTime = calculateTimeRemaining(releaseDate);
+			if (remainingTime != ""){
+				$('#installPatch').html(remainingTime);
+				state.isThereACountdown = true;
+			}
+		}
+	}
+	
 	if ((vp == false) && (document.getElementById('checkBox').checked)){
 		//besoin d'installer le patch des voix
 		state.voicePatchToBeInstalled = true
 	}
-	
 	if (userVersion == "Aucune"){
 		state.patchState = 1;
 	}
 	else {
 		if (compare == 1){
-			state.patchState = 2; //mettre à jour uniquement (ça revient au même, juste le bouton change)
+			state.patchState = 2; 
 		}
 		else if (compare == 3)
 		{
 			state.patchState = 0;
 		}
 	}
-	return state;
+	currentState = state;
 }
 
 
 
-async function downloadAndExtractZip(name, ID) {
-    $('.gauge').html("Récupération des infos pour " + name + "...");
-    const url = 'https://www.googleapis.com/drive/v3/files/' + gameLoaded[ID] + '?key=' + config['ApiGD'];
-
+async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
+    gaugeObject.html("Récupération des infos sur " + name + "...");
+    const url = 'https://www.googleapis.com/drive/v3/files/' + ID + '?key=' + config['ApiGD'];
+	
     try {
         const resultatWebVoices = await getFetch(url, 'GET', {}, false);
         if (resultatWebVoices['error'] !== undefined) {
-            $('.gauge').html('Erreur ' + resultatWebVoices['error']['code']).css('background', '#ff000080');
-            return;
+            gaugeObject.html('Erreur ' + resultatWebVoices['error']['code']).css('background', '#ff000080');
+            return false;
         }
-		drawGauge(0);
-        $('.gauge').html("Récupération du zip de " + name + ". Veuillez patienter...");
+		drawGauge(0,gaugeObject);
+        gaugeObject.html("Récupération du zip de " + name + ".");
 
         const res = await fetch(url + '&alt=media', { agent });
         const fileLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
-        const zipFilePath = filepath + directorySeparator + 'Liberl News' + directorySeparator + resultatWebVoices['name'];
+		
+		let currentDir = __dirname;
+		
+		if (currentDir.endsWith('.asar'))
+			currentDir = path.dirname(currentDir); //in a portable build dirrname is an archive so the download will fail
+		
+        const zipFilePath = currentDir + directorySeparator + resultatWebVoices['name'];
 
         let seconds = 0.0;
         let inter = setInterval(() => {
@@ -483,20 +597,20 @@ async function downloadAndExtractZip(name, ID) {
 
         const fileStream = fs.createWriteStream(zipFilePath);
         
-        $('.gauge').html('');
+        gaugeObject.html('');
         await new Promise((resolve, reject) => {
             res.body.pipe(fileStream);
 
             res.body.on('data', data => {
                 written += data.length;
                 const percent = (written / fileLength) * 100;
-                drawGauge(percent);
-                $('.gauge').html('Téléchargement - ' + percent.toFixed(2) + '% (' + formatBytes(speed) + ')');
+                drawGauge(percent,gaugeObject);
+                gaugeObject.html('Téléchargement - ' + percent.toFixed(2) + '% (' + formatBytes(speed) + ')');
             });
 
             res.body.on('error', err => {
                 console.error('ERREUR : ' + err);
-                $('.gauge').html('Téléchargement interrompu !').css('background', '#ff000080');
+                gaugeObject.html('Téléchargement interrompu !').css('background', '#ff000080');
                 reject(err);
             });
 
@@ -504,17 +618,19 @@ async function downloadAndExtractZip(name, ID) {
         });
         clearInterval(inter);
         clearInterval(calculSpeed);
-
-        await fct(zipFilePath);
+        await fct(zipFilePath, outputFolder, gaugeObject);
 
         fs.unlink(zipFilePath, (err) => {
             if (err) {
-                throw err;
+				gaugeObject.html('Erreur').css('background', '#ff000080');
+				return false;
             }
         });
+		return true;
 
     } catch (error) {
-        console.error('Error:', error);
+		gaugeObject.html('Erreur').css('background', '#ff000080');
+		return false;
     }
 }
 
@@ -524,9 +640,9 @@ function uninstall() {
     if($('#uninstallAll').hasClass('disabled'))
         return;
 	$('#uninstallAll').addClass("disabled");
-	$('#uninstallAll').html("Désinstaller");
 	
     const paths = gameLoaded['toBeUninstalled']
+	var countFile = 0;
 	for (var filePath of paths) {
 		
 		fullPath = installationPath + directorySeparator + filePath;
@@ -546,46 +662,172 @@ function uninstall() {
 				}
 
 				// Update gauge after each removal
-				drawGauge(/* calculate and provide the appropriate progress */);
-				$('.gauge').html(/* update the gauge text */);
+				drawGauge(countFile/paths.length, $('#projectBar'));
+				$('#projectBar').html(filePath + " supprimé");
 			} else {
 				console.log(`Path does not exist: ${filePath}`);
 			}
+			countFile = countFile + 1;
 		} catch (error) {
 			console.error(`Error removing ${filePath}: ${error.message}`);
 		}
     }
-	
-    // On désactive le bouton de désinstallation
     
-    
+    $('#uninstallAll').removeClass("disabled");
 
     // On affiche dans la jauge que tout est ok
-    drawGauge(100);
-    $('.gauge').html('Patch supprimé !');
+    drawGauge(100,$('#projectBar'));
+    $('#projectBar').html('Patch supprimé !');
+    
+	updateCurrentState(); // on actualise l'état
+	updateGUI();
+}
 
-	currentState = getCurrentState(); // on actualise l'état
-	updateGUI(currentState);
+function isSteamRunning() {
+    const platform = process.platform;
+    let query = '';
+
+    switch (platform) {
+        case 'win32': query = 'steam.exe'; break;
+        case 'darwin': query = 'Steam.app'; break;
+        case 'linux': query = 'steam'; break;
+        default:
+            // Unsupported platform
+            return false;
+    }
+
+    let cmd = '';
+
+    switch (platform) {
+        case 'win32': cmd = 'tasklist'; break;
+        case 'darwin': cmd = `ps -ax | grep "${query}"`; break;
+        case 'linux': cmd = 'ps -A'; break;
+        default:
+            break;
+    }
+
+    try {
+        const stdout = execSync(cmd, { encoding: 'utf-8' });
+        return stdout.toLowerCase().indexOf(query.toLowerCase()) > -1;
+    } catch (err) {
+        // Handle errors if any (e.g., command not found)
+        return false;
+    }
 }
 
 // Lancé quand on appuie sur le bouton "Installer/Mise à jour"
 async function downloadFiles() {
-
-	var currentState = getCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
-	console.log(currentState)
-	updateGUI(currentState);
+	
+	updateCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
+	updateGUI();
 	
     // Si le bouton "Installer" est désactivé, on ne fait rien
     if($('#installPatch').hasClass('disabled'))
         return;
-    $('#installPatch').addClass("disabled");
 	
+    $('#installPatch').addClass("disabled");
+	$('#uninstallAll').addClass("disabled");
+	
+	// Avant toute chose en fait, il faut vérifier qu'on est sous Steam Deck pour override la dll dinput8 système avec notre dll ; 
+	//Note : on peut la faire pour tous les jeux, c'est pas grave (s'il la trouve pas à l'intérieur du dossier il fallback sur celle de wine)
+	//Note 2 : Quand Steam est ouvert il ne calcule plus localconfig.vdf (a priori il édite un fichier sur le cloud), et quand Steam est fermé 
+	//localconfig est remplacé par la version sur le cloud. Ce qui veut dire que si Steam est ouvert, impossible d'ajouter de LaunchOption pour override
+	//la dll puisqu'elle sera synchronisée avec le cloud à la prochaine fermeture (et de toute façon le changement sera pas effectif vu que Steam ne calcule 
+	//que le cloud tant qu'il est ouvert (Système de merde)
+	//la seule solution : fermer d'abord Steam puis éditer le vdf.
+	//dans ce cas il devrait appliquer la LaunchOption au fichier sur le cloud au démarrage.
+	//Note 3 : la moindre erreur dans le fichier vdf conduit Steam à supprimer la section problématique (ex : mettre des " à l'intérieur de " pour un string)
+	if (isRunningOnSteamDeck()){//
+		const steamUserFolder = "/home/deck/.local/share/Steam/userdata"
+		//const steamUserFolder = "C:\\Program Files (x86)\\Steam\\userdata"
+		const files = fs.readdirSync(steamUserFolder, { withFileTypes: true });
+		
+		
+		for (const file of files)  {
+			const fullPath = path.join(steamUserFolder, file.name);
+
+			if (file.isDirectory()) {
+				const userID = file.name;
+				
+				if (isSteamRunning()){
+					var giveUp = false;
+					await new Promise((resolve) => {
+						openWindow('steamWarning');
+
+						// You can resolve the Promise when the user clicks "Je continue" or "Abandonner"
+						// For example, you can have a button click event that resolves the Promise
+
+						// Example using a button click event
+						document.getElementById('continueButton').addEventListener('click', () => {
+							closeWindow('steamWarning');
+							resolve();
+						});
+
+						document.getElementById('giveUpButton').addEventListener('click', () => {
+							giveUp = true;
+							closeWindow('steamWarning');
+							$('#installPatch').removeClass("disabled");
+							$('#uninstallAll').removeClass("disabled");
+							updateCurrentState(); // on actualise l'état
+							updateGUI();
+							resolve();
+							
+							
+						});
+					});
+					if ((giveUp)) return;
+					
+					const command = process.platform === 'win32' ? 'taskkill' : 'pkill';
+					const args = process.platform === 'win32' ? ['/F', '/IM', 'steam.exe'] : ['steam'];
+
+					const steamProcess = spawn(command, args);
+
+					steamProcess.on('close', (code) => {
+					  if (code === 0) {
+						console.log('Steam has been closed successfully.');
+						// Proceed with your code after Steam is closed.
+					  } else {
+						console.error(`Failed to close Steam. Exit code: ${code}`);
+					  }
+					});
+
+					steamProcess.on('error', (err) => {
+					  console.error(`Error while trying to close Steam: ${err.message}`);
+					});
+				}
+
+				const vdfFilePath = steamUserFolder + directorySeparator + userID + directorySeparator + "config" + directorySeparator + "localconfig.vdf";
+				
+				const vdfContent = fs.readFileSync(vdfFilePath, 'utf8');
+				// Parse the .vdf content
+				const parsedData = VDF.parse(vdfContent);
+				
+				parsedData.get('UserLocalConfigStore')
+				.get('Software')
+				.get('Valve')
+				.get('Steam')
+				.get('apps')
+				.get(String(gameLoaded['steamId']))
+				.set('LaunchOptions', "WINEDLLOVERRIDES=\\\"dinput8=n,b\\\" %command%");
+				// Serialize the modified data back to .vdf format
+				const updatedVDFContent = VDF.stringify(parsedData, true);
+				//
+				//// Write the updated content back to the .vdf file
+				fs.writeFileSync(vdfFilePath, updatedVDFContent, 'utf8');
+			}
+		}
+	}
+	
+	
+	let result = true;
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
-	await downloadAndExtractZip("patch", 'patchID');
+	if (!currentState.isThereACountdown)
+		result = result && await downloadAndExtractZip("patch", gameLoaded['patchID'],$('#projectBar'), $('.filePath').html());
 	if($('#checkBox').is(':checked') && gameLoaded['voicesID'] != ""){
 		if (currentState.voicePatchToBeInstalled)
-			await downloadAndExtractZip("mod des voix", 'voicesID');
-		await downloadAndExtractZip("scénario doublé", 'voicedScriptID');
+			result = result && await downloadAndExtractZip("mod des voix", gameLoaded['voicesID'],$('#projectBar'), $('.filePath').html());
+		if (!currentState.isThereACountdown)
+			result = result && await downloadAndExtractZip("scénario doublé", gameLoaded['voicedScriptID'],$('#projectBar'), $('.filePath').html());
 	}
 	
     // On enregistre la version du patch installé ; on sauvegarde aussi les infos utilisateur en local (Dans %APPDATA%/config.json)
@@ -596,18 +838,21 @@ async function downloadFiles() {
     $('#versionPatchInstalle').html('   ' + gameLoaded['patchVersion']);
     $('#versionPatchDispo').css('color', '#ffffff');
 
-    // On désactive le bouton de téléchargement, l'utilisateur vient d'avoir la dernière version
-    $('#installPatch').addClass("disabled");
-    $('#installPatch').html("Installer");
-
     // On affiche dans la jauge que tout est ok
-    drawGauge(100);
-    $('.gauge').html('Patch téléchargé et installé !');
-    console.log("Patch téléchargé et extrait !");
+	if (result){
+		drawGauge(100,$('#projectBar'));
+		$('#projectBar').html('Patch téléchargé et installé !');
+	}
+    
+    //console.log("Patch téléchargé et extrait !");
 
     // On a terminé ! Bravo !
-	currentState = getCurrentState(); // on actualise l'état
-	updateGUI(currentState);
+	
+	$('#installPatch').removeClass("disabled");
+	$('#uninstallAll').removeClass("disabled");
+	
+	updateCurrentState(); // on actualise l'état
+	updateGUI();
 }
 
 function isVoicePatchInstalled(){
@@ -616,13 +861,10 @@ function isVoicePatchInstalled(){
 	
 // Permet d'extraire les archives .zip
 // TO-DO : Voir pour mettre un mot de passe aux archives, pour éviter le vol (?)
-async function fct(pathAbs){
+async function fct(pathAbs, outputFolder, gaugeObject){
 
     // Le chemin absolu (F:/mon_dossier/mon_sous_dossier/fichier.zip) de l'archive .zip
     const zipFilePath = pathAbs;
-
-    // Le chemin absolu de l'endroit où l'archive sera extraite (Idéalement le dossier racine du jeu)
-    let finalPath = $('.filePath').html(); // T'as vu, ça c'est le turfu !
 
     // On obtient le nombre total de fichiers à extraire, et leurs poids
     const zip = new StreamZip.async({ file: pathAbs });
@@ -645,7 +887,7 @@ async function fct(pathAbs){
         zipfile.readEntry();
         zipfile.on('entry', (entry) => {
 		  
-          var targetFile = finalPath + directorySeparator + entry.fileName;
+          var targetFile = outputFolder + directorySeparator + entry.fileName;
 		  targetFile = targetFile.replace('/', directorySeparator);
 			
           if (entry.fileName.endsWith('/')) {
@@ -665,8 +907,8 @@ async function fct(pathAbs){
               readStream.on('data', (chunk) => {
                 bytesRead += chunk.length;
                 const progressPercentage = Math.round((bytesRead / totalEntriesBytes) * 100);
-                $('.gauge').html(progressPercentage + '%');
-                drawGauge(progressPercentage);
+                gaugeObject.html(progressPercentage + '%');
+                drawGauge(progressPercentage,gaugeObject);
               });
       
               readStream.on('end', () => {
@@ -691,12 +933,12 @@ async function fct(pathAbs){
 
 // Permet de "remplir" automatiquement la jauge de progression ; tout est déjà calculé
 // Mettre 0 pour la vider, 100 pour la remplir
-function drawGauge(percent = 0)
+function drawGauge(percent = 0, gaugeObject)
 {
     if(percent < 0) percent = 0;
     if(percent > 100) percent = 100;
 
-    $('.gauge').css("background", "linear-gradient(to right, #3DB9F5 " + percent/2 + "% , #48b2e5 " + percent + "%, transparent 1%)");
+    gaugeObject.css("background", "linear-gradient(to right, #3DB9F5 " + percent/2 + "% , #48b2e5 " + percent + "%, transparent 1%)");
 }
 
 // Permet de convertir une vitesse de téléchargement
@@ -782,7 +1024,7 @@ function getGivenGame(game) {
         }
       }
     }
-  } else if (os.homedir() !== 'C:\\users\\steamuser') { // Assuming 'C:\\users\\steamuser' is a placeholder. Please adjust it accordingly.
+  } else if (isRunningOnSteamDeck()) { //On va juste gérer le steam deck, le reste c'est trop chiant
     const list = [];
 
     if (!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf')) {
@@ -798,12 +1040,14 @@ function getGivenGame(game) {
         }
       });
     }
-
     for (const path of list) {
       if (fs.existsSync(path + game['steamFolderName'])) {
         return path + game['steamFolderName'];
       }
     }
+  }
+  else{
+		console.log("OS incompatible");
   }
 
   return null; // Return null if no suitable path is found
@@ -828,4 +1072,120 @@ async function loopFolder(lines)
                 resolve(text);
         }
     });
+}
+
+async function installUpdate() {
+	const popupContent = document.querySelector('.popup-content');
+	// Hide the buttons and show the loading bar container
+	document.querySelectorAll('.popup-content button').forEach(button => {
+	button.style.display = 'none';
+	});
+	document.getElementById('loadingBarContainer').style.display = 'block';
+	let currentDir = process.env.PORTABLE_EXECUTABLE_DIR;
+	await downloadAndExtractZip("installateur", config['setupID'],$('#loadingBar'), currentDir);
+	drawGauge(100,$('#loadingBar'));
+	$('#loadingBar').html("Mise à jour terminée !");
+	const closeButton = document.createElement('button');
+	closeButton.textContent = 'Fermer';
+	closeButton.onclick = () => {
+	  closeWindow('popupContainer'); 
+	};
+	
+	popupContent.appendChild(closeButton);
+}
+
+function isRunningOnSteamDeck() {
+	try {
+	let os = require("os");
+	let info = `${os.type()} ${os.release()} ${os.platform()}`.toLowerCase();
+	let list = ["valve", "steam"];
+	return info.includes("linux") && list.some(x => info.includes(x));
+	} catch (e) {
+	return false;
+	}
+}
+function openWindow(windowID){
+	document.getElementById(windowID).style.display = 'flex';
+}
+function closeWindow(windowID) {
+  document.getElementById(windowID).style.display = 'none';
+}
+function changeImageByPath(imagePath) {
+    document.getElementById('helpButton').src = "./images/" + imagePath;
+}
+
+//demandé par Aisoce : toutes les popup qui sont juste informatives, on doit pouvoir les fermer en cliquant dans le vide
+window.onclick = function(event) {
+  var modalIds = ["popupContainer","HelpWindow", "InfoWindow"];
+
+  for (var i = 0; i < modalIds.length; i++) {
+    var modal = document.getElementById(modalIds[i]);
+    if (modal && event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+}
+
+	
+	
+function openinDefaultBrowser(url) {
+    shell.openExternal(url);
+}
+function onChangePath() {
+    installationPath = document.getElementById("file").files[0].path
+	const stats = fs.statSync(installationPath);
+
+	if (stats.isFile()) {
+	  installationPath = path.dirname(installationPath);
+	}
+	
+	console.log(installationPath)
+	updateCurrentState(); // on actualise l'état
+	updateGUI();
+	$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
+}
+function onChangeCheckbox() {
+    updateCurrentState(); // on actualise l'état
+	updateGUI();
+}
+
+function playButton() {
+	if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)){
+		const gamePath = $('.filePath').html() + directorySeparator + gameLoaded["exe_name"];
+
+        // Use spawn to execute the game
+        const gameProcess = spawn(gamePath, [], { detached: true, stdio: 'ignore' });
+
+        // Detach the child process and let it run independently
+        gameProcess.unref();
+	}
+	else
+	{
+		downloadFiles();
+	}
+}
+
+function openPDFWindow(url) {
+    const screenWidth = window.screen.width;
+    const screenHeight = window.screen.height;
+
+    // Set a percentage of the screen size for width and height
+    const widthPercentage = 90;
+    const heightPercentage = 90;
+
+    const width = Math.floor((screenWidth * widthPercentage) / 100);
+    const height = Math.floor((screenHeight * heightPercentage) / 100);
+
+    const left = (screenWidth - width) / 2;
+    const top = (screenHeight - height) / 2;
+
+    const newWindow = window.open(url, '_blank', `width=${width},height=${height},left=${left},top=${top}`);
+
+    // Check if the new window was successfully opened
+    if (newWindow) {
+        newWindow.focus(); // Bring focus to the new window
+    } else {
+        // Handle cases where the window was blocked or failed to open
+        alert('Popup blocked. Please allow popups for this site.');
+    }
 }

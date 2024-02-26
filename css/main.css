@@ -95,37 +95,40 @@ body {
 .leftMenu {
     width: 12%;
     height: 100%;
-    padding: 20px 10px;
+    padding: 0;
     border: 1px solid black;
-    background: #CFE2F3cc;
+    background: #AD7C5Acc;
     display: flex;
     flex-direction: column;
     text-align: center;
     box-shadow: 4px 0 10px 10px #00000070;
     z-index: 2;
+    
 }
 
 .leftMenu button {
-    background: #3DB9F5;
+    background: #C8A78A;
     padding: 10px;
-    margin: 10px 0;
+    margin: 10px 10px;
     font-family: 'Averia';
     font-size: 85%;
     border-radius: 50px;
     border: none;
-    box-shadow: 0px 0px 5px 3px #5cd2ed;
     cursor: pointer;
     transition: all 0.5s;
+	color: #000;
 }
 
 .leftMenu button:hover {
-    background: rgb(235, 181, 81);
-    box-shadow: 0px 0px 5px 3px orange;
+    background: #FFCFAA;
+    box-shadow: 0px 0px 5px 3px black;
+	color: #000;
 }
 
 .leftMenu button.active {
-    background: #e9c973;
-    box-shadow: 0px 0px 5px 3px orange;
+    background: #FFCFAA;
+    box-shadow: 0px 0px 5px 3px black;
+	color: #000;
 }
 
 .leftMenu i {
@@ -312,17 +315,21 @@ img.logo {
     flex-direction: column;
 }
 
-button#uninstallAll {
-    font-family: "Oswald";
-    padding: 5px 10px;
-    margin: 10px auto;
-    width: 50%;
-    display: block;
-    font-size: 1.5vw;
-    border: none;
-    background: white;
-    cursor: pointer;
-    transition: all 0.1s;
+.button-container {
+    display: flex;
+}
+
+#uninstallAll {
+    color: white;
+	padding: 5px 10px;
+	margin: 10px auto;
+	display: block;
+    transition: color 0.3s ease;
+	font-size: 24px;
+}
+
+#uninstallAll:hover {
+    color: red;
 }
 
 button#installPatch {
@@ -392,7 +399,7 @@ button#installPatch.disabled {
     cursor: not-allowed;
 }
 
-.gauge {
+#projectBar {
     width: 90%;
     margin: 20px auto;
     padding: 4px;
@@ -407,7 +414,7 @@ button#installPatch.disabled {
     align-items: center;
 }
 
-.gauge::before {
+#projectBar::before {
     z-index: -1;
     background: #ffffff88;
     position: absolute;
@@ -417,15 +424,19 @@ button#installPatch.disabled {
     left: 0;
     content: "";
 }
-
 .icon-container {
     position: relative;
-    cursor: pointer;
-    margin: 10px auto;
     display: flex;
-    align-self: flex-end;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    cursor: pointer;
+    margin-left: 0px; /* Adjust the left margin */
+    margin-right: 0px; /* Adjust the right margin */
     margin-top: auto;
+    margin-bottom: 10px; /* Adjust the margin as needed */
     padding: 0 2px;
+    border: none;
 }
 
 i.fa-info {
@@ -441,9 +452,9 @@ i.fa-info {
 
 i.fa-info:hover {
     color: white;
-    background: #000000cc;
+    background: #0000cccc;
 }
-
+/*
 .infos {
     display: none;
     position: absolute;
@@ -458,9 +469,11 @@ i.fa-info:hover {
     font-size: 1.35vw;
 }
 
-.icon-container:hover .infos {
+.fa-info:hover + .infos {
     display: block;
 }
+
+
 
 .setupVersion, .contact, .aide {
     border-bottom: 1px solid black;
@@ -479,7 +492,7 @@ i.fa-info:hover {
 
 .aide {
     border-bottom: none;
-}
+}*/
 
 #desc span {
     margin-left: 15px;
@@ -564,3 +577,176 @@ i.fa-info:hover {
     -ms-transform: rotate(45deg);
     transform: rotate(45deg);
   }
+.popup-container {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  
+  z-index: 3;
+}
+
+.popup-content {
+  /*background-color: #fff;*/
+  background-color: transparent;
+  padding: 20px;
+  border-radius: 5px;
+  /*box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);*/
+  text-align: center;
+  position: relative; /* Added for positioning close button */
+  z-index: 3;
+	background-image: url("../images/bulle.svg");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  color: white;
+  
+}
+
+.close-button {
+  border: none;
+  font-size: 24px;
+  display: inline-block;
+  padding: 3% 7%;
+  vertical-align: middle;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  background-color: inherit;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
+  position: absolute;
+}
+
+.topright {
+  top: 0;
+  right: 0;
+}
+
+.content-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+#loadingBarContainer {
+  margin-top: 20px;
+}
+
+#loadingBar {
+  height: 20px;
+  background-color: #4caf50; /* Green color for the loading bar */
+  width: 0; /* Initial width is 0, it will be updated dynamically */
+  transition: width 0.5s; /* Smooth transition for width changes */
+}
+
+#loadingBar {
+    width: 90%;
+    margin: 20px auto;
+    padding: 4px;
+    border: 1px solid black;
+    box-shadow: 2px 2px 0 #00000080;
+    height: 30px;
+    border-radius: 5px;
+    position: relative;
+    background: linear-gradient(to right, #3DB9F5 50% , #3DB9F500 50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#loadingBar::before {
+    z-index: -1;
+    background: #ffffff88;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    content: "";
+}
+
+@keyframes helpButtonAnimation {
+    0% { background-position: 0 0; }
+    100% { background-position: 0px 0; }
+}
+
+
+#helpButton {
+    position: relative;
+    cursor: pointer;
+    margin: 10px auto;
+    display: flex;
+    margin-top: auto;
+    padding: 0;
+    width: 120px;
+    height: 150px;
+    border: none;
+    animation: helpButtonAnimation 1s steps(4) infinite; /* Adjust the animation duration and steps */
+}
+
+
+.content-container {
+    display: flex;
+}
+
+.image-container img {
+	width: auto; /* Adjust the width as needed */
+    height: 200px; /* This ensures the aspect ratio is maintained */
+    flex: 1;
+    text-align: center;
+}
+
+/* Vertical separator */
+.vertical-separator {
+    width: 1px;
+    background-color: #fff; /* Adjust color as needed */
+    margin: 0 20px; /* Adjust margin as needed */
+	
+}
+
+/* Horizontal separator */
+.horizontal-separator {
+    height: 1px;
+    background-color: #fff; /* Adjust color as needed */
+    margin: 20px 0; /* Adjust margin as needed */
+    width: 100%; /* Full width */
+}
+
+.horizontal-stack {
+  background-color: transparent;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: none;
+  text-align: center;
+  z-index: 3;
+  display: flex;
+}
+
+.vertical-stack {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: none;
+  text-align: center;
+  z-index: 3;
+  position: relative;
+}
+
+.top-left,
+.top-right,
+.bottom {
+    /* Your styling for each section */
+    margin-bottom: 20px; /* Adjust margin as needed */
+}
+
+#loadingImage {
+    max-width: 100%; /* Set the maximum width to 100% of its container */
+    height: auto; /* Allow the height to adjust proportionally */
+}
+
+

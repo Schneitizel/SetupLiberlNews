@@ -4,7 +4,6 @@ const electron = require('electron');
 const path = require('path');
 const os = require("os");
 const config = require("./package.json");
-
 // Défini la taille de la fenêtre ; une plus grande valeur signifie une fenêtre plus grande (Défaut : 1.1)
 const multiplicator = 1.1;
 

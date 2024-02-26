@@ -1,22 +1,23 @@
         <div class="mainWindow">
+			
             <div class="leftMenu">
                 <img class="logo" src="images/logo.png">
                 <button id="modeTrails" onclick="changeMode('trails')" class="active">Série "Trails"</button>
-                <button id="modeRetro" onclick="changeMode('retro')">Jeux rétros</button>
-
+                <button id="modeRetro" onclick="changeMode('retro')" title="Prochainement" disabled style="color: #878086">Jeux rétros</button>
+				
                 <span class="icon-container">
-                    <i class="fa-solid fa-info"></i>
-                    <div class="infos">
+					<img id="helpButton" src="./images/help_button.png" alt="Aide" onclick="openWindow('HelpWindow')" onmouseover="changeImageByPath('help_button2.png')" onmouseout="changeImageByPath('help_button.png')">
+                    <div onclick="openWindow('InfoWindow')">
+						<i class="fa-solid fa-info"></i>
+					 </div>
+                    <!--<div class="infos">
                         <div class="setupVersion">
                             Version X.X.X.
                         </div>
                         <div class="contact">
-                            Contact
+                            À propos
                         </div>
-                        <div class="aide">
-                            Aide & support
-                        </div>
-                    </div>
+                    </div>-->
                 </span>
             </div>
 
@@ -60,17 +61,17 @@
                             <i onclick="changeImage(1)" class="fa-solid fa-arrow-right"></i>
                         </div>
                         <div class="inputFolder">
-                            <input id="file" type="file" webkitdirectory directory/>
+                            <input id="file" type="file" onchange="onChangePath();" webkitdirectory directory/>
                             <div class="filePath">Aucun chemin d'accès spécifié</div>
                         </div>
-                        <div class="gauge"></div>
+                        <div class="gauge" id="projectBar"></div>
                     </div>
                     <div class="gameCredits">
                         <i onclick="displayCredits()" class="fa-solid fa-download"></i>
                         <span id="credits"></span>
                     </div>
                     <div class="gameInfos">
-                        <i onclick="displayCredits()" class="fa-solid fa-user-group"></i>
+                        <i onclick="displayCredits()" class="fa-solid fa-user-group" title="Équipe"></i>
                         <div id="gameDesc">
                             DUMMY DUMMY DUMMY
                         </div>
@@ -79,21 +80,111 @@
                                 • Version du patch installée :<br><span id="versionPatchInstalle">UNDEFINED</span><br>
                                 • Version du patch disponible :<br><span id="versionPatchDispo">UNDEFINED</span><br>
                             </div>
-							<button onclick="uninstall()" id="uninstallAll">
-								Désinstaller
-							</button>
+							
                             <label id="checkVoice" class="container">Inclure les voix de la version EVO
-                                <input id="checkBox" type="checkbox" checked="checked">
+                                <input id="checkBox" type="checkbox" checked="checked" onchange="onChangeCheckbox();">
                                 <span class="checkmark"></span>
                             </label>
 							
                         </div>
-                        <button onclick="downloadFiles()" id="installPatch">
-                            Installer
-                        </button>
+						<div class="button-container">
+							<button onclick="playButton()" id="installPatch">
+								Installer
+							</button>
+							<i onclick="uninstall()" class="fa-solid fa-trash" style="cursor: pointer" title="Désinstaller le patch" id="uninstallAll"></i>
+						</div>
                     </div>
+					
                 </div>
 
                 <div class="footer"></div>
             </div>
         </div>
+		<div class="popup-container" id="popupContainer">
+			<div class="popup-content">
+				<span onclick="closeWindow('popupContainer')" class="close-button topright">&times;</span>
+			  <h2>Nouvelle version disponible !</h2>
+			  <p>Une nouvelle mise à jour pour l'installateur est disponible <a onclick="openinDefaultBrowser('https://drive.google.com/file/d/1W_xDVTOVD-3j4d8O4tWj6NA2uoz4k9nS/view?usp=drive_link')" style="color: yellow; text-decoration: underline; cursor: pointer;"> ici</a>.</p>
+			 
+			  <!--<div id="loadingBarContainer" style="display: none;">
+				  <div class="gauge" id="loadingBar"></div>
+				</div> -->
+			</div>
+		</div>
+		<div class="popup-container" id="steamWarning">
+			<div class="popup-content">
+				<span onclick="closeWindow('steamWarning')" class="close-button topright">&times;</span>
+			  <h2>Attention !</h2>
+			  <p>Steam doit être fermé afin de pouvoir installer le jeu sur Steam Deck.<br>
+			  Veillez bien à sauvegarder tout progrès en cours avant de continuer.</p>
+			  <button id="continueButton">Je continue</button>
+			  <button id="giveUpButton">J'abandonne</button>
+			</div>
+		</div>
+		
+		<div class="popup-container" id="HelpWindow">
+
+		  <div class="popup-content">
+			<span onclick="closeWindow('HelpWindow')" class="close-button topright">&times;</span>
+			<h2>Obtenir de l'aide !</h2>
+
+			<div class="content-container">
+			  <div class="image-container">
+				<a href="#" onclick="openPDFWindow('./doc/doc.pdf'); return false;">
+				  <img src="./images/tita.png" alt="Consulter la liste des PDFs disponibles">
+				</a>
+				<p>Premier réflexe : consulter la base de tutoriels<br>et la FAQ pour trouver les réponses<br>à ses questions (souvent déjà posées).</p>
+			  </div>
+
+			  <div class="vertical-separator"></div>
+
+			  <div class="image-container">
+				<a onclick="openinDefaultBrowser('https://discord.gg/NaJMAs7rfn')" style="cursor: pointer;">
+				  <img src="./images/discord.png" alt="Venez sur discord !">
+				</a>
+				<p>Si après quelques minutes de recherche<br> vous ne trouvez rien, venez expliquer<br>la situation sur le discord de l'équipe !</p>
+			  </div>
+			</div>
+		  </div>
+		</div>
+		<div class="popup-container" id="InfoWindow">
+		
+			<div class="popup-content">
+				<span onclick="closeWindow('InfoWindow')" class="close-button topright">&times;</span>
+				<div class="horizontal-stack">
+					<div class="top-left">
+						<h2>Quelques recommandations</h2>
+						<p>Pour en savoir plus sur la série "Trails" :<br>Future vidéo de Kouryu 
+						<br><br>
+						Et pour discuter de la série,<br>rejoignez le discord Trails of France :
+                    
+						<br><br><img onclick="openinDefaultBrowser('https://discord.gg/TcPZs4gvfU')" src="./images/trailsof.png" style="cursor: pointer;"></img>
+						</p>
+					</div>
+
+					<div class="vertical-separator"></div>
+
+					<div class="top-right">
+						<h2>Ils traduisent aussi Falcom...</h2>
+						
+						<p>Nanami (Ys) : <br> <a onclick="openinDefaultBrowser('https://nanami-ys.fr')" style="color: yellow; text-decoration: underline; cursor: pointer;">Page de Nanami</a> <br>Le C.R.X. (Tokyo Xanadu) : <br> <a onclick="openinDefaultBrowser('https://twitter.com/CRXTraductions')" style="color: yellow; text-decoration: underline; cursor: pointer;">Page X du C.R.X.</a></p>
+					</div>
+				</div>
+				<div class="horizontal-separator"></div>
+
+				<div class="bottom">
+					<p>Merci à Schneitizel S. Sekai pour le développement de cet installateur. <br>Le code source est trouvable sur sa page Github : <br> <a onclick="openinDefaultBrowser('https://github.com/Schneitizel/SetupLiberlNews')" style="color: yellow; text-decoration: underline; cursor: pointer;">Github</a> </p>
+					<div class="setupVersion">
+                        Version de l'installateur : X.X.X.
+                    </div>
+					<br>
+					<div class="socials">
+						<a onclick="openinDefaultBrowser('https://twitter.com/SoraNoKisekiFR')" style="cursor: pointer;"><i class="fab fa-twitter fa-2x"></i></a>
+						<a onclick="openinDefaultBrowser('https://www.youtube.com/channel/UCBb_vVv53ORjaFmRvcR4TdA')" style="cursor: pointer;"><i class="fab fa-youtube fa-2x"></i></a>
+						<a onclick="openinDefaultBrowser('https://discord.gg/NaJMAs7rfn')" style="cursor: pointer;"><i class="fab fa-discord fa-2x"></i></a>
+    
+					</div>
+				</div>
+			</div>
+			
+		</div>
