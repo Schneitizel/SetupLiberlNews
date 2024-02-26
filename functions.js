@@ -374,7 +374,6 @@ function displayCredits()
         $('.gameCredits').css('display', 'none');
     }
 }
-
 function calculateTimeRemaining(targetDate) {
     // Parse the target date string into a JavaScript Date object
     const targetDateTime = new Date(targetDate).getTime();
@@ -386,14 +385,23 @@ function calculateTimeRemaining(targetDate) {
     const timeDifference = targetDateTime - now;
 
     if (timeDifference > 0) {
-        // Calculate days and hours remaining
-        const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        if (timeDifference < 24 * 60 * 60 * 1000) { // Less than 24 hours
+            // Calculate hours and minutes remaining
+            const hours = Math.floor(timeDifference / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
 
-        // Create a formatted string
-        const resultString = `Dans ${days} jours et ${hours} heures`;
+            // Create a formatted string
+            const resultString = `Dans ${hours} heures et ${minutes} minutes`;
+            return resultString;
+        } else {
+            // Calculate days and hours remaining
+            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-        return resultString;
+            // Create a formatted string
+            const resultString = `Dans ${days} jours et ${hours} heures`;
+            return resultString;
+        }
     } else {
         return "";
     }
@@ -401,22 +409,8 @@ function calculateTimeRemaining(targetDate) {
 
 function updateGUI(currentState){
 	let color = "#6CDC3D";
-	let releaseDate = "";
-	let isThereACountdown = false;
-	
-	if (gameLoaded.hasOwnProperty('releaseDate')){
-		releaseDate = new Date(gameLoaded['releaseDate']);	
-		if (!isNaN(releaseDate.getTime()))
-		{
-			let remainingTime = calculateTimeRemaining(releaseDate);
-			if (remainingTime != ""){
-				$('#installPatch').html(remainingTime);
-				isThereACountdown = true;
-			}
-		}
-	}
-	
-	if (!isThereACountdown){
+	$('#installPatch').removeClass("disabled");
+	if (!currentState.isThereACountdown){
 		if ((currentState.patchState == 2) && (!currentState.voicePatchToBeInstalled)){ //seul le patch est à mettre à jour
 			$('#installPatch').html("Mettre à jour le patch");
 		}
@@ -450,7 +444,6 @@ function updateGUI(currentState){
 		}
 		
 	}
-	
     
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
     $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
@@ -461,6 +454,8 @@ function updateGUI(currentState){
 function getCurrentState(){
 	
 	const vp = isVoicePatchInstalled();
+	
+	let releaseDate = "";
 	
 	let userVersion = "Aucune"
 	if (installationPath !== null){
@@ -480,13 +475,25 @@ function getCurrentState(){
 		voicePatchToBeInstalled: false,
 		patchState: 0,
 		userVersion: userVersion,
+		isThereACountdown: false
 	};
-
+    
+	if (gameLoaded.hasOwnProperty('releaseDate')){
+		releaseDate = new Date(gameLoaded['releaseDate']);	
+		if (!isNaN(releaseDate.getTime()))
+		{
+			let remainingTime = calculateTimeRemaining(releaseDate);
+			if (remainingTime != ""){
+				$('#installPatch').html(remainingTime);
+				state.isThereACountdown = true;
+			}
+		}
+	}
+	
 	if ((vp == false) && (document.getElementById('checkBox').checked)){
 		//besoin d'installer le patch des voix
 		state.voicePatchToBeInstalled = true
 	}
-	
 	if (userVersion == "Aucune"){
 		state.patchState = 1;
 	}
@@ -507,12 +514,12 @@ function getCurrentState(){
 async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
     gaugeObject.html("Récupération des infos sur " + name + "...");
     const url = 'https://www.googleapis.com/drive/v3/files/' + ID + '?key=' + config['ApiGD'];
-
+	
     try {
         const resultatWebVoices = await getFetch(url, 'GET', {}, false);
         if (resultatWebVoices['error'] !== undefined) {
             gaugeObject.html('Erreur ' + resultatWebVoices['error']['code']).css('background', '#ff000080');
-            return;
+            return false;
         }
 		drawGauge(0,gaugeObject);
         gaugeObject.html("Récupération du zip de " + name + ".");
@@ -568,14 +575,15 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 
         fs.unlink(zipFilePath, (err) => {
             if (err) {
-                throw err;
+				gaugeObject.html('Erreur').css('background', '#ff000080');
+				return false;
             }
         });
-		$('#installPatch').removeClass("disabled");
-		$('#uninstallAll').removeClass("disabled");
+		return true;
 
     } catch (error) {
-        console.error('Error:', error);
+		gaugeObject.html('Erreur').css('background', '#ff000080');
+		return false;
     }
 }
 
@@ -666,7 +674,6 @@ function isSteamRunning() {
 async function downloadFiles() {
 	
 	var currentState = getCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
-	console.log(currentState)
 	updateGUI(currentState);
 	
     // Si le bouton "Installer" est désactivé, on ne fait rien
@@ -767,13 +774,15 @@ async function downloadFiles() {
 	}
 	
 	
-	
+	let result = true;
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
-	await downloadAndExtractZip("patch", gameLoaded['patchID'],$('#projectBar'), $('.filePath').html());
+	if (!currentState.isThereACountdown)
+		result = result && await downloadAndExtractZip("patch", gameLoaded['patchID'],$('#projectBar'), $('.filePath').html());
 	if($('#checkBox').is(':checked') && gameLoaded['voicesID'] != ""){
 		if (currentState.voicePatchToBeInstalled)
-			await downloadAndExtractZip("mod des voix", gameLoaded['voicesID'],$('#projectBar'), $('.filePath').html());
-		await downloadAndExtractZip("scénario doublé", gameLoaded['voicedScriptID'],$('#projectBar'), $('.filePath').html());
+			result = result && await downloadAndExtractZip("mod des voix", gameLoaded['voicesID'],$('#projectBar'), $('.filePath').html());
+		if (!currentState.isThereACountdown)
+			result = result && await downloadAndExtractZip("scénario doublé", gameLoaded['voicedScriptID'],$('#projectBar'), $('.filePath').html());
 	}
 	
     // On enregistre la version du patch installé ; on sauvegarde aussi les infos utilisateur en local (Dans %APPDATA%/config.json)
@@ -785,9 +794,12 @@ async function downloadFiles() {
     $('#versionPatchDispo').css('color', '#ffffff');
 
     // On affiche dans la jauge que tout est ok
-    drawGauge(100,$('#projectBar'));
-    $('#projectBar').html('Patch téléchargé et installé !');
-    console.log("Patch téléchargé et extrait !");
+	if (result){
+		drawGauge(100,$('#projectBar'));
+		$('#projectBar').html('Patch téléchargé et installé !');
+	}
+    
+    //console.log("Patch téléchargé et extrait !");
 
     // On a terminé ! Bravo !
 	
