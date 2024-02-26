@@ -463,8 +463,8 @@ function updateGUI(){
 		}
 		else if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //Tout est OK
 		{
-			color = "#ffffff";
-			$('#installPatch').addClass("disabled");
+			//$('#installPatch').addClass("disabled");
+			$('#installPatch').html("Lancer le jeu");
 		}
 		else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1)) //rien n'existe
 		{
@@ -505,9 +505,12 @@ function updateCurrentState(){
 	if (installationPath !== null){
 		
 		const versions_path = installationPath + "/data_fr/system/versions.json";
+		
 		if(fs.existsSync(versions_path)){
+			delete require.cache[require.resolve(versions_path)];
 			versions = require(versions_path);
 			userVersion = versions['current_patch_id'];
+			$('#versionPatchInstalle').html('   ' + userVersion);
 		} 
 			
 	}
@@ -1144,4 +1147,23 @@ function onChangePath() {
 function onChangeCheckbox() {
     updateCurrentState(); // on actualise l'état
 	updateGUI();
+}
+
+function playButton() {
+	if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)){
+		const gamePath = $('.filePath').html() + directorySeparator + gameLoaded["exe_name"];
+
+        // Use spawn to execute the game
+        const gameProcess = spawn(gamePath, [], { detached: true, stdio: 'ignore' });
+
+        // Detach the child process and let it run independently
+        gameProcess.unref();
+	}
+	else
+	{
+		downloadFiles();
+	}
+	
+	
+	
 }
