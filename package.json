@@ -7,8 +7,7 @@
   "scripts": {
     "test": "test",
     "start": "electron .",
-    "build": "electron-builder",
-    "package": "pkg . --target win --output release-builds/LiberlNewsSetup.exe"
+	  "build": "electron-builder"
   },
   "author": "Schneitizel S. Sekai",
   "license": "ISC",
@@ -55,6 +54,5 @@
         }
       ]
     }
-	
   }
 }
