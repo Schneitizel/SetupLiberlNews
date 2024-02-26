@@ -477,7 +477,7 @@ function updateGUI(){
 	} else {
 		
 		if (currentState.voicePatchToBeInstalled){
-			$('#installPatch').html("Installer les voix");
+			$('#installPatch').html("Préinstaller les voix");
 			counting = false;
 		}
 		else{
@@ -669,10 +669,8 @@ function uninstall() {
 			console.error(`Error removing ${filePath}: ${error.message}`);
 		}
     }
-	
-    // On désactive le bouton de désinstallation
     
-    
+    $('#uninstallAll').removeClass("disabled");
 
     // On affiche dans la jauge que tout est ok
     drawGauge(100,$('#projectBar'));
