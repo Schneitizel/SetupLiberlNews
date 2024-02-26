@@ -19,7 +19,7 @@ const agent = new https.Agent({
 });
 const { shell } = require('electron');
 // Variables globales
-
+var currentState;
 var config;
 var projectsList;
 
@@ -38,7 +38,6 @@ var directorySeparator;
 
 var installationPath = null;
 
-
 if (process.platform === 'win32') {
     filepath = process.env.APPDATA;
     directorySeparator = '\\';
@@ -46,7 +45,7 @@ if (process.platform === 'win32') {
     filepath = os.homedir();
     directorySeparator = '/';
 }
-
+var counting = false;
 loadingEvents.on('loaded', async () => {
     // Affiche la fenêtre principale en fondu d'ouverture (Default : 1000ms/1s)
     $('.mainWindow').animate({
@@ -250,8 +249,8 @@ function openProject(type = "trails", id = "Sky", game = 0)
 	soit les voix sont installées mais pas le patch => on installe le patch
 	soit le patch est installé mais pas les voix, mais la case est cocheé => on installe les voix
 	si y a un problème à un quelconque moment l'utilisateur peut cliquer sur un bouton désinstaller qui va enlever voix et patch (table rase). ensuite il pourra cocher la case des voix et installer et ça lui donnera voix et patch*/
-    const currentState = getCurrentState();
-	updateGUI(currentState);
+    updateCurrentState();
+	updateGUI();
 
 	
     menu.animate({
@@ -385,7 +384,15 @@ function calculateTimeRemaining(targetDate) {
     const timeDifference = targetDateTime - now;
 
     if (timeDifference > 0) {
-        if (timeDifference < 24 * 60 * 60 * 1000) { // Less than 24 hours
+        if (timeDifference < 60 * 60 * 1000) { // Less than 1 hour
+            // Calculate minutes and seconds remaining
+            const minutes = Math.floor(timeDifference / (1000 * 60));
+            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+            // Create a formatted string
+            const resultString = `Dans ${minutes} minutes et ${seconds} secondes`;
+            return resultString;
+        } else if (timeDifference < 24 * 60 * 60 * 1000) { // Less than 24 hours
             // Calculate hours and minutes remaining
             const hours = Math.floor(timeDifference / (1000 * 60 * 60));
             const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
@@ -407,10 +414,42 @@ function calculateTimeRemaining(targetDate) {
     }
 }
 
-function updateGUI(currentState){
+function calculateAndDisplayTimeRemaining(targetDate) {
+    // Function to calculate the remaining time and update the display
+    function updateDisplay() {
+        const remainingTime = calculateTimeRemaining(targetDate);
+        
+		if (counting){
+			if (remainingTime == ""){
+				updateCurrentState();
+				updateGUI();
+				counting = false;
+			}
+			else
+				$('#installPatch').html(remainingTime);
+		}
+    }
+
+    // Set up a setInterval to refresh the display every second
+    const intervalId = setInterval(() => {
+        if (!counting) {
+            clearInterval(intervalId); // Stop the interval if the button state changes
+			
+        } else {
+            updateDisplay(); // Otherwise, update the display
+        }
+    }, 1000);
+
+    // Optionally, you can return the intervalId if you want to be able to clearInterval later
+    return intervalId;
+}
+
+function updateGUI(){
 	let color = "#6CDC3D";
 	$('#installPatch').removeClass("disabled");
 	if (!currentState.isThereACountdown){
+		counting = false;
+		
 		if ((currentState.patchState == 2) && (!currentState.voicePatchToBeInstalled)){ //seul le patch est à mettre à jour
 			$('#installPatch').html("Mettre à jour le patch");
 		}
@@ -436,10 +475,15 @@ function updateGUI(currentState){
 			$('#installPatch').html("MàJ patch et installer voix");
 		}
 	} else {
+		
 		if (currentState.voicePatchToBeInstalled){
 			$('#installPatch').html("Installer les voix");
+			counting = false;
 		}
 		else{
+			if (!counting)
+				calculateAndDisplayTimeRemaining(gameLoaded["releaseDate"]);
+			counting = true;
 			$('#installPatch').addClass("disabled");
 		}
 		
@@ -451,7 +495,7 @@ function updateGUI(currentState){
 	
 }
 
-function getCurrentState(){
+function updateCurrentState(){
 	
 	const vp = isVoicePatchInstalled();
 	
@@ -506,7 +550,7 @@ function getCurrentState(){
 			state.patchState = 0;
 		}
 	}
-	return state;
+	currentState = state;
 }
 
 
@@ -634,8 +678,8 @@ function uninstall() {
     drawGauge(100,$('#projectBar'));
     $('#projectBar').html('Patch supprimé !');
     
-	currentState = getCurrentState(); // on actualise l'état
-	updateGUI(currentState);
+	updateCurrentState(); // on actualise l'état
+	updateGUI();
 }
 
 function isSteamRunning() {
@@ -673,8 +717,8 @@ function isSteamRunning() {
 // Lancé quand on appuie sur le bouton "Installer/Mise à jour"
 async function downloadFiles() {
 	
-	var currentState = getCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
-	updateGUI(currentState);
+	updateCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
+	updateGUI();
 	
     // Si le bouton "Installer" est désactivé, on ne fait rien
     if($('#installPatch').hasClass('disabled'))
@@ -723,8 +767,8 @@ async function downloadFiles() {
 							closeWindow('steamWarning');
 							$('#installPatch').removeClass("disabled");
 							$('#uninstallAll').removeClass("disabled");
-							currentState = getCurrentState(); // on actualise l'état
-							updateGUI(currentState);
+							updateCurrentState(); // on actualise l'état
+							updateGUI();
 							resolve();
 							
 							
@@ -806,8 +850,8 @@ async function downloadFiles() {
 	$('#installPatch').removeClass("disabled");
 	$('#uninstallAll').removeClass("disabled");
 	
-	currentState = getCurrentState(); // on actualise l'état
-	updateGUI(currentState);
+	updateCurrentState(); // on actualise l'état
+	updateGUI();
 }
 
 function isVoicePatchInstalled(){
@@ -1071,7 +1115,7 @@ function changeImageByPath(imagePath) {
 
 //demandé par Aisoce : toutes les popup qui sont juste informatives, on doit pouvoir les fermer en cliquant dans le vide
 window.onclick = function(event) {
-  var modalIds = ["HelpWindow", "InfoWindow"];
+  var modalIds = ["popupContainer","HelpWindow", "InfoWindow"];
 
   for (var i = 0; i < modalIds.length; i++) {
     var modal = document.getElementById(modalIds[i]);
@@ -1095,11 +1139,11 @@ function onChangePath() {
 	}
 	
 	console.log(installationPath)
-	currentState = getCurrentState(); // on actualise l'état
-	updateGUI(currentState);
+	updateCurrentState(); // on actualise l'état
+	updateGUI();
 	$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
 }
 function onChangeCheckbox() {
-    currentState = getCurrentState(); // on actualise l'état
-	updateGUI(currentState);
+    updateCurrentState(); // on actualise l'état
+	updateGUI();
 }
