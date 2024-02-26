@@ -410,7 +410,6 @@ function updateGUI(currentState){
 		{
 			let remainingTime = calculateTimeRemaining(releaseDate);
 			if (remainingTime != ""){
-				$('#installPatch').addClass("disabled");
 				$('#installPatch').html(remainingTime);
 				isThereACountdown = true;
 			}
@@ -442,6 +441,14 @@ function updateGUI(currentState){
 		{
 			$('#installPatch').html("MàJ patch et installer voix");
 		}
+	} else {
+		if (currentState.voicePatchToBeInstalled){
+			$('#installPatch').html("Installer les voix");
+		}
+		else{
+			$('#installPatch').addClass("disabled");
+		}
+		
 	}
 	
     
