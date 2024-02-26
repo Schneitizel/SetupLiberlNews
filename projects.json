@@ -25,7 +25,8 @@
 			"icudt71.dll",
 			"icuuc71.dll",   
 		        "voice"
-		    ]
+		    ],
+		    "releaseDate": '2024-03-22T16:00:00'
                 }
             }
         },
