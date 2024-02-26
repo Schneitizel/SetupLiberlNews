@@ -74,14 +74,13 @@ $(document).ready(async function(){
     {
         document.getElementById('startSound').play();
     }
-
     // Charge le fichier index.html, la fenêtre principale en gros, après 1.150 seconde (Le temps que l'animation ait fini)
-    setTimeout(function(){
+    //setTimeout(function(){
         $('.main').load('index.html', function() {
             loadElements();
             loadingEvents.emit('loaded'); // On affiche la page !
         });
-    }, 1150);
+    //}, 1150);
 });
 
 async function loadElements()
@@ -376,37 +375,74 @@ function displayCredits()
     }
 }
 
+function calculateTimeRemaining(targetDate) {
+    // Parse the target date string into a JavaScript Date object
+    const targetDateTime = new Date(targetDate).getTime();
+    
+    // Get the current time
+    const now = new Date().getTime();
+
+    // Calculate the time difference in milliseconds
+    const timeDifference = targetDateTime - now;
+
+    if (timeDifference > 0) {
+        // Calculate days and hours remaining
+        const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+        // Create a formatted string
+        const resultString = `Dans ${days} jours et ${hours} heures`;
+
+        return resultString;
+    } else {
+        return "";
+    }
+}
+
 function updateGUI(currentState){
 	let color = "#6CDC3D";
+	let releaseDate = "";
+	let isThereACountdown = false;
 	
-	
-	
-	if ((currentState.patchState == 2) && (!currentState.voicePatchToBeInstalled)){ //seul le patch est à mettre à jour
-		
-		$('#installPatch').html("Mettre à jour le patch");
-	}
-	else if ((currentState.patchState == 1) && (!currentState.voicePatchToBeInstalled)) //le patch n'existe pas, les voix existent déjà
-	{
-		$('#installPatch').html("Installer patch");
-	}
-	else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //le patch est OK, mais pas les voix
-	{
-		$('#installPatch').html("Installer voix");
-	}
-	else if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //Tout est OK
-	{
-		color = "#ffffff";
-		$('#installPatch').addClass("disabled");
-	}
-	else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1)) //rien n'existe
-	{
-		$('#installPatch').html("Installer patch + voix");
-	}
-	else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 2)) //les voix n'existent pas et le patch est vieux
-	{
-		$('#installPatch').html("MàJ patch et installer voix");
+	if (gameLoaded.hasOwnProperty('releaseDate')){
+		releaseDate = new Date(gameLoaded['releaseDate']);	
+		if (!isNaN(releaseDate.getTime()))
+		{
+			let remainingTime = calculateTimeRemaining(releaseDate);
+			if (remainingTime != ""){
+				$('#installPatch').addClass("disabled");
+				$('#installPatch').html(remainingTime);
+				isThereACountdown = true;
+			}
+		}
 	}
 	
+	if (!isThereACountdown){
+		if ((currentState.patchState == 2) && (!currentState.voicePatchToBeInstalled)){ //seul le patch est à mettre à jour
+			$('#installPatch').html("Mettre à jour le patch");
+		}
+		else if ((currentState.patchState == 1) && (!currentState.voicePatchToBeInstalled)) //le patch n'existe pas, les voix existent déjà
+		{
+			$('#installPatch').html("Installer patch");
+		}
+		else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //le patch est OK, mais pas les voix
+		{
+			$('#installPatch').html("Installer voix");
+		}
+		else if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //Tout est OK
+		{
+			color = "#ffffff";
+			$('#installPatch').addClass("disabled");
+		}
+		else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1)) //rien n'existe
+		{
+			$('#installPatch').html("Installer patch + voix");
+		}
+		else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 2)) //les voix n'existent pas et le patch est vieux
+		{
+			$('#installPatch').html("MàJ patch et installer voix");
+		}
+	}
 	
     
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
