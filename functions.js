@@ -1164,28 +1164,3 @@ function playButton() {
 		downloadFiles();
 	}
 }
-
-function openPDFWindow(url) {
-    const screenWidth = window.screen.width;
-    const screenHeight = window.screen.height;
-
-    // Set a percentage of the screen size for width and height
-    const widthPercentage = 90;
-    const heightPercentage = 90;
-
-    const width = Math.floor((screenWidth * widthPercentage) / 100);
-    const height = Math.floor((screenHeight * heightPercentage) / 100);
-
-    const left = (screenWidth - width) / 2;
-    const top = (screenHeight - height) / 2;
-
-    const newWindow = window.open(url, '_blank', `width=${width},height=${height},left=${left},top=${top}`);
-
-    // Check if the new window was successfully opened
-    if (newWindow) {
-        newWindow.focus(); // Bring focus to the new window
-    } else {
-        // Handle cases where the window was blocked or failed to open
-        alert('Popup blocked. Please allow popups for this site.');
-    }
-}
