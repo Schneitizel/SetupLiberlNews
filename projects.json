@@ -64,7 +64,10 @@
 		        "voice"
 		    ],
 		    "releaseDate": "2024-02-25T16:00:00",
-		    "exe_name": "ed6_win.exe"
+		    "exe_name": "ed6_win.exe",
+		    "status": "Disponible bientôt",
+    		    "inGameDate": "S1202",
+                    "locationOnMap": { "x": 200, "y": 400 }
                 }
             }
         },
