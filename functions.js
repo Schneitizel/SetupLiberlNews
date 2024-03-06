@@ -225,15 +225,8 @@ function openProject(type = "trails", id = "Sky", game = 0)
 	
 	installationPath = getGivenGame(gameLoaded)
 	
-    /*steamAppsFolders.forEach(element => {
-        if($('.filePath').hasClass('noPath') && fs.existsSync(element + directorySeparator + gameLoaded['steamFolderName'] + directorySeparator))
-            $('.filePath').removeClass("noPath").addClass("okPath").html(element + directorySeparator + gameLoaded['steamFolderName'] + directorySeparator);
-    });*/
 	
     $('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
-    // On affiche les versions des patchs et des voix que l'utilisateur possède, et celles disponibles
-	
-
 
 	/*
 	Soit le patch n'est pas installé, les voix non plus, la case des voix n'est pas cochée => on installe que le patch (scénario le plus simple)
@@ -992,7 +985,7 @@ function getRegistryValue(regKey, data) {
 function getGivenGame(game) {
   let i = 0;
 
-  if (process.platform === 'win32') {
+  if (process.platform === 'win32' && os.homedir() != 'C:\\users\\steamuser') {
     const steamRegistryKey = `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${game['steamId']}`;
     const installationPath = getRegistryValue(steamRegistryKey, 'InstallLocation');
     if (installationPath !== null) {
@@ -1016,29 +1009,29 @@ function getGivenGame(game) {
         }
       }
     }
-  } else { //On va juste gérer le steam deck, le reste c'est trop chiant
-    const list = [];
-
-    if (!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf')) {
-      list[0] = '/home/deck/.local/share/Steam/steamapps/common';
-      list[1] = '/home/steam/.local/share/Steam/steamapps/common';
-      list[2] = '/run/media/mmcblk0p1/steamapps/common';
-    } else {
-      const listing = fs.readFileSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf').toString().split('"path"		');
-      listing.forEach((value, index) => {
-        if (index > 0) {
-          list[i] = value.split('"')[1] + '/steamapps/common';
-          i++;
-        }
-      });
-    }
-    for (const path of list) {
-      if (fs.existsSync(path + game['steamFolderName'])) {
+  } else {
 		isRunningOnDeck = true;
-        return path + game['steamFolderName'];
-      }
-    }
-	
+		const list = [];
+
+		if (!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf')) {
+		  list[0] = '/home/deck/.local/share/Steam/steamapps/common';
+		  list[1] = '/home/steam/.local/share/Steam/steamapps/common';
+		  list[2] = '/run/media/mmcblk0p1/steamapps/common';
+		} else {
+		  const listing = fs.readFileSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf').toString().split('"path"		');
+		  listing.forEach((value, index) => {
+			if (index > 0) {
+			  list[i] = value.split('"')[1] + '/steamapps/common';
+			  i++;
+			}
+		  });
+		}
+		for (const path of list) {
+		  if (fs.existsSync(path + directorySeparator + game['steamFolderName'])) {
+			
+			return path + game['steamFolderName'];
+		  }
+		}
   }
   return "Jeu non détecté"; // Return null if no suitable path is found
 }
@@ -1225,9 +1218,7 @@ function createMap() {
 			return customPan;
     };
 	function onZoom(currZoom) {
-    // Assume markersByLocation is the object containing arrays of markers grouped by their location
 		updateMarkersOnCurrentZoom(currZoom);
-    
 	}
 
 	function updateMarkersOnCurrentZoom(currZoom){
