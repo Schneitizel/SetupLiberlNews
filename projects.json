@@ -5,7 +5,7 @@
       "icon": "Sky",
       "games": {
         "0": {
-          "name": "The Legend of Heroes: Trails in the Sky FC",
+          "name": "Trails in the Sky FC",
           "steamId": 251150,
           "GOGId": 1207665083,
           "patchVersion": "1.0.0",
@@ -61,7 +61,7 @@
           "availableLanguages": "Japonais, Anglais, Français [Fan]"
         },
         "1": {
-          "name": "The Legend of Heroes: Trails in the Sky SC",
+          "name": "Trails in the Sky SC",
           "steamId": 251290,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
@@ -71,7 +71,7 @@
           "locationOnMap": { "x": 220, "y": 400 }
         },
         "2": {
-          "name": "The Legend of Heroes: Trails in the Sky The 3rd",
+          "name": "Trails in the Sky The 3rd",
           "steamId": 436670,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
@@ -87,7 +87,7 @@
       "icon": "CS",
       "games": {
         "0": {
-          "name": "The Legend of Heroes: Trails of Cold Steel",
+          "name": "Trails of Cold Steel",
           "steamId": 538680,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
@@ -97,7 +97,7 @@
           "locationOnMap": { "x": 260, "y": 400 }
         },
         "1": {
-          "name": "The Legend of Heroes: Trails of Cold Steel II",
+          "name": "Trails of Cold Steel II",
           "steamId": 748490,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
@@ -107,7 +107,7 @@
           "locationOnMap": { "x": 280, "y": 400 }
         },
         "2": {
-          "name": "The Legend of Heroes: Trails of Cold Steel III",
+          "name": "Trails of Cold Steel III",
           "steamId": 991270,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
@@ -117,7 +117,7 @@
           "locationOnMap": { "x": 300, "y": 400 }
         },
         "3": {
-          "name": "The Legend of Heroes: Trails of Cold Steel IV",
+          "name": "Trails of Cold Steel IV",
           "steamId": 1198090,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
@@ -127,7 +127,7 @@
           "locationOnMap": { "x": 320, "y": 400 }
         },
         "4": {
-          "name": "The Legend of Heroes: Trails into Reverie",
+          "name": "Trails into Reverie",
           "steamId": 1668540,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
@@ -143,8 +143,8 @@
       "icon": "Crossbell",
       "games": {
         "0": {
-          "name": "The Legend of Heroes: Trails from Zero",
-          "steamId": 1668520,
+          "name": "Trails from Zero",
+          "steamId": 1668510,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
           "status": "Indisponible",
@@ -153,7 +153,7 @@
           "locationOnMap": { "x": 360, "y": 400 }
         },
         "1": {
-          "name": "The Legend of Heroes: Trails to Azure",
+          "name": "Trails to Azure",
           "steamId": 1668520,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
@@ -169,36 +169,36 @@
       "icon": "Crossbell",
       "games": {
         "0": {
-          "name": "The Legend of Heroes: Trails through Daybreak",
+          "name": "Trails through Daybreak",
           "steamId": 2138610,
           "patchVersion": "1.0.0",
           "steamFolderName": "Trails in the Sky FC",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
           "status": "Indisponible",
           "inGameDate": "S1208",
-          "availableLanguages": "Japonais, Anglais",
+          "availableLanguages": "Japonais, Anglais [Fan]",
           "locationOnMap": { "x": 400, "y": 400 }
         },
         "1": {
-          "name": "The Legend of Heroes: Kuro no Kiseki II -CRIMSON SiN-",
+          "name": "Kuro no Kiseki II -CRIMSON SiN-",
           "steamId": 2113920,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
           "exe_name": "ed6_win.exe",
           "status": "Indisponible",
-          "inGameDate": "S1208",
+          "inGameDate": "S1209",
           "availableLanguages": "Japonais, Anglais [Fan]",
           "locationOnMap": { "x": 420, "y": 400 }
         },
         "2": {
-          "name": "The Legend of Heroes: Kai no Kiseki",
+          "name": "Kai no Kiseki",
           "id": "Kai",
           "steamId": -1,
           "patchVersion": "1.0.0",
           "desc": "Considéré comme l'une des séries de JRPG au tour par tour les plus vastes, les plus longues et les plus méticuleusement détaillées de tous les temps, ce premier chapitre de la saga Trails ouvre la voie à ce qui est rapidement devenu la franchise la plus populaire et la plus vendue de Nihon Falcom, le développeur d'Ys, en plus de 30 ans d'histoire.",
           "status": "Indisponible",
           "inGameDate": "???",
-          "availableLanguages": "Japonais, Anglais [Fan]",
+          "availableLanguages": "Aucune",
           "locationOnMap": { "x": 440, "y": 400 }
         }
       }
