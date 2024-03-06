@@ -114,7 +114,7 @@
           "status": "Indisponible",
           "inGameDate": "Avril S1206",
           "availableLanguages": "Japonais, Anglais, Français",
-          "locationOnMap": { "x": 236, "y": 271 }
+          "locationOnMap": { "x": 236, "y": 270 }
         },
         "3": {
           "name": "Trails of Cold Steel IV",
@@ -124,7 +124,7 @@
           "status": "Indisponible",
           "inGameDate": "Août S1206",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 260, "y": 270 }
+          "locationOnMap": { "x": 241, "y": 270 }
         },
         "4": {
           "name": "Trails into Reverie",
@@ -134,7 +134,7 @@
           "status": "Indisponible",
           "inGameDate": "Février S1207",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 420, "y": 280 }
+          "locationOnMap": { "x": 390, "y": 280 }
         }
       }
     },
@@ -160,7 +160,7 @@
           "status": "Indisponible",
           "inGameDate": "Août S1204",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 400, "y": 280 }
+          "locationOnMap": { "x": 385, "y": 280 }
         }
       }
     },
@@ -188,7 +188,7 @@
           "status": "Indisponible",
           "inGameDate": "S1209",
           "availableLanguages": "Japonais, Anglais [Fan]",
-          "locationOnMap": { "x": 510, "y": 310 }
+          "locationOnMap": { "x": 495, "y": 310 }
         },
         "2": {
           "name": "Kai no Kiseki",
@@ -199,7 +199,7 @@
           "status": "Indisponible",
           "inGameDate": "???",
           "availableLanguages": "Aucune",
-          "locationOnMap": { "x": 440, "y": 400 }
+          "locationOnMap": { "x": 500, "y": 310 }
         }
       }
     }
