@@ -1,4 +1,4 @@
-        <div class="mainWindow">
+        <div class="mainWindow" id="main">
 			
             <div class="leftMenu">
                 <img class="logo" src="images/logo.png">
@@ -10,95 +10,67 @@
                     <div onclick="openWindow('InfoWindow')">
 						<i class="fa-solid fa-info"></i>
 					 </div>
-                    <!--<div class="infos">
-                        <div class="setupVersion">
-                            Version X.X.X.
-                        </div>
-                        <div class="contact">
-                            À propos
-                        </div>
-                    </div>-->
                 </span>
             </div>
+			
+				
+			<div class="mainMenu" id="mainMenu">
+				<svg id="map-svg" xmlns="http://www.w3.org/2000/svg">
+				
+				
+					<image href="./images/map_test.svg" width="100%" height="100%" />
+					
+				</svg>
+				<div class="displayGame">
 
-            <div class="mainMenu">
-                <!--
-                    L'élément qui affiche les jeux Trails
-                    Vide par défaut, rempli via functions.js au démarrage
-                    Affiché par défaut
-                -->
-                <div class="displayList Trails">
-                    <div id="trailsGames" class="game">
-
-                    </div>
-                </div>
-
-                <!--
-                    L'élément qui affiche les jeux rétro
-                    Vide par défaut, rempli via functions.js au démarrage
-                    Masqué par défaut
-                -->
-                <div class="displayList Retro">
-                    <div id="retroGames" class="game">
-
-                    </div>
-                </div>
-
-                <!--
-                    L'élément qui affiche la page d'un projet
-                    Vide par défaut, rempli via functions.js quand demandé
-                    Masqué par défaut
-                -->
-                <div class="displayGame">
-                    <i onclick="goHome()" class="fa-solid fa-house"></i>
-                    <h1 id="gameName">
-                        NOM DU JEU
-                    </h1>
-                    <div class="gamePictures">
-                        <div class="displayPicture">
-                        <img id="gamePicture" src="">
-                            <i onclick="changeImage(-1)" class="fa-solid fa-arrow-left"></i>
-                            <i onclick="changeImage(1)" class="fa-solid fa-arrow-right"></i>
-                        </div>
-                        <div class="inputFolder">
-                            <input id="file" type="file" onchange="onChangePath();" webkitdirectory directory/>
-                            <div class="filePath">Aucun chemin d'accès spécifié</div>
-                        </div>
-                        <div class="gauge" id="projectBar"></div>
-                    </div>
-                    <div class="gameCredits">
-                        <i onclick="displayCredits()" class="fa-solid fa-download"></i>
-                        <span id="credits"></span>
-                    </div>
-                    <div class="gameInfos">
-                        <i onclick="displayCredits()" class="fa-solid fa-user-group" title="Équipe"></i>
-                        <div id="gameDesc">
-                            DUMMY DUMMY DUMMY
-                        </div>
-                        <div class="gamePatch">
-                            <div id="desc">
-                                • Version du patch installée :<br><span id="versionPatchInstalle">UNDEFINED</span><br>
-                                • Version du patch disponible :<br><span id="versionPatchDispo">UNDEFINED</span><br>
-                            </div>
+					<i onclick="goHome()" class="fa-solid fa-house"></i>
+					<h1 id="gameName">
+						NOM DU JEU
+					</h1>
+					<div class="gamePictures">
+						<div class="displayPicture">
+						<img id="gamePicture" src="">
+							<i onclick="changeImage(-1)" class="fa-solid fa-arrow-left"></i>
+							<i onclick="changeImage(1)" class="fa-solid fa-arrow-right"></i>
+						</div>
+						<div class="inputFolder">
+							<input id="file" type="file" onchange="onChangePath();" webkitdirectory directory/>
+							<div class="filePath">Aucun chemin d'accès spécifié</div>
+						</div>
+						<div class="gauge" id="projectBar"></div>
+					</div>
+					<div class="gameCredits">
+						<i onclick="displayCredits()" class="fa-solid fa-download"></i>
+						<span id="credits"></span>
+					</div>
+					<div class="gameInfos">
+						<i onclick="displayCredits()" class="fa-solid fa-user-group" title="Équipe"></i>
+						<div id="gameDesc">
+							DUMMY DUMMY DUMMY
+						</div>
+						<div class="gamePatch">
+							<div id="desc">
+								• Version du patch installée :<br><span id="versionPatchInstalle">UNDEFINED</span><br>
+								• Version du patch disponible :<br><span id="versionPatchDispo">UNDEFINED</span><br>
+							</div>
 							
-                            <label id="checkVoice" class="container">Inclure les voix de la version EVO
-                                <input id="checkBox" type="checkbox" checked="checked" onchange="onChangeCheckbox();">
-                                <span class="checkmark"></span>
-                            </label>
+							<label id="checkVoice" class="container">Inclure les voix de la version EVO
+								<input id="checkBox" type="checkbox" checked="checked" onchange="onChangeCheckbox();">
+								<span class="checkmark"></span>
+							</label>
 							
-                        </div>
+						</div>
 						<div class="button-container">
 							<button onclick="playButton()" id="installPatch">
 								Installer
 							</button>
 							<i onclick="uninstall()" class="fa-solid fa-trash" style="cursor: pointer" title="Désinstaller le patch" id="uninstallAll"></i>
 						</div>
-                    </div>
-					
-                </div>
-
-                <div class="footer"></div>
-            </div>
+					</div>
+				</div>
+				
+			<div class="footer"></div>
+			</div>
         </div>
 		<div class="popup-container" id="popupContainer">
 			<div class="popup-content">
@@ -106,9 +78,6 @@
 			  <h2>Nouvelle version disponible !</h2>
 			  <p>Une nouvelle mise à jour pour l'installateur est disponible <a onclick="openinDefaultBrowser('https://drive.google.com/file/d/1W_xDVTOVD-3j4d8O4tWj6NA2uoz4k9nS/view?usp=drive_link')" style="color: yellow; text-decoration: underline; cursor: pointer;"> ici</a>.</p>
 			 
-			  <!--<div id="loadingBarContainer" style="display: none;">
-				  <div class="gauge" id="loadingBar"></div>
-				</div> -->
 			</div>
 		</div>
 		<div class="popup-container" id="steamWarning">

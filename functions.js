@@ -17,6 +17,8 @@ const path = require('path');
 const agent = new https.Agent({
     rejectUnauthorized: false,
 });
+
+const svgpanzoom = require('svg-pan-zoom')
 const { shell } = require('electron');
 // Variables globales
 var currentState;
@@ -46,13 +48,18 @@ if (process.platform === 'win32') {
     directorySeparator = '/';
 }
 var counting = false;
+var isRunningOnDeck = false;
+
+var isDragging = false;
+var initialX = 0;
+var initialY = 0;
+
 loadingEvents.on('loaded', async () => {
     // Affiche la fenêtre principale en fondu d'ouverture (Default : 1000ms/1s)
     $('.mainWindow').animate({
         opacity: 1
     }, 1000);
 });
-
 
 
 $(document).ready(async function(){
@@ -89,56 +96,39 @@ async function loadElements()
     $('.setupVersion').html('Version de l\'installateur : ' + version['version']);
 
     $('.footer').html(config["footerText"]); // On affiche le message du footer
-
-        // On boucle le fichier des projets, on affiche les projets Trails d'abord
-        Object.entries(projectsList["trails"]).forEach(([key, value]) => {
-            let games = "";
-
-            Object.entries(value['games']).forEach(([keyGame, valueGame]) => {
-                let imageURL = "https://cdn.akamai.steamstatic.com/steam/apps/" + valueGame['steamId'] + "/header.jpg";
-                if(valueGame['steamId'] == -1) // Si le jeu est un jeu non Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
-                    imageURL = "images/" + valueGame['name'] + ".png";
-
-                if(valueGame['patchVersion'] != '0') // Si un patch est disponible, on l'affiche
-                {
-                    games = games + '<img onclick="openProject(\'trails\', \'' + key + '\', \'' + keyGame + '\')" src="' + imageURL + '">';
-                    if(dataUser['projects'][valueGame["name"]] === undefined) // Si le projet n'existe pas dans les infos utilisateurs, on le créé
-                        dataUser['projects'][valueGame["name"]] = {"patch": null, "voice": null};
-                }
-            });
-
-            if(games !== "") // Si pas de patch disponible, on affiche pas !
-                $('#trailsGames').html($('#trailsGames').html() + '<h1> <img src="images/' + value['icon'] + '.png">' + value['title'] + '</h1>' + games);
+	
+	//Par défaut, toujours afficher le mode Trails, mais on charge les jeux rétros pour se préparer au cas où l'utilisateur change de mode
+	createMap();
+	
+    // Et on boucle aussi les projets rétro ! (Note : la carte est exclusive aux Trails, les jeux rétro auront un menu dans ce style là :)
+    Object.entries(projectsList["retro"]).forEach(([key, value]) => {
+        let games = "";
+	
+        Object.entries(value['games']).forEach(([keyGame, valueGame]) => {
+            let imageURL = "https://cdn.akamai.steamstatic.com/steam/apps/" + valueGame['steamId'] + "/header.jpg";
+            if(valueGame['steamId'] == -1) // Si le jeu est un jeu nom Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
+                imageURL = "images/" + valueGame['name'] + ".png";
+	
+            if(valueGame['patchVersion'] != '0') // Si un patch est disponible, on l'affiche
+            {
+                games = games + '<img onclick="openProject(\'retro\', \'' + key + '\', \'' + keyGame + '\')" src="' + imageURL + '">';
+                if(dataUser['projects'][valueGame["name"]] === undefined) // Si le projet n'existe pas dans les infos utilisateurs, on le créé
+                    dataUser['projects'][valueGame["name"]] = {"patch": null, "voice": null};
+            }
         });
+	
+        if(games !== "") // Si pas de patch disponible, on affiche pas !
+            $('#retroGames').html($('#retroGames').html() + '<h1> <img src="images/' + value['icon'] + '.png">' + value['title'] + '</h1>' + games);
+    });
 
-        // Et on boucle aussi les projets rétro !
-        Object.entries(projectsList["retro"]).forEach(([key, value]) => {
-            let games = "";
-
-            Object.entries(value['games']).forEach(([keyGame, valueGame]) => {
-                let imageURL = "https://cdn.akamai.steamstatic.com/steam/apps/" + valueGame['steamId'] + "/header.jpg";
-                if(valueGame['steamId'] == -1) // Si le jeu est un jeu nom Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
-                    imageURL = "images/" + valueGame['name'] + ".png";
-
-                if(valueGame['patchVersion'] != '0') // Si un patch est disponible, on l'affiche
-                {
-                    games = games + '<img onclick="openProject(\'retro\', \'' + key + '\', \'' + keyGame + '\')" src="' + imageURL + '">';
-                    if(dataUser['projects'][valueGame["name"]] === undefined) // Si le projet n'existe pas dans les infos utilisateurs, on le créé
-                        dataUser['projects'][valueGame["name"]] = {"patch": null, "voice": null};
-                }
-            });
-
-            if(games !== "") // Si pas de patch disponible, on affiche pas !
-                $('#retroGames').html($('#retroGames').html() + '<h1> <img src="images/' + value['icon'] + '.png">' + value['title'] + '</h1>' + games);
-        });
-
-        writeConfig();
+    writeConfig();
+	
+	var setupVersion = compareVersions(version['version'], config["latestInstallerVersion"]);
+	if (setupVersion == 1){
+		 openWindow("popupContainer");
+	} 
+	//Pas d'autoupdate, c'est impossible en version portable
 		
-		var setupVersion = compareVersions(version['version'], config["latestInstallerVersion"]);
-		if (setupVersion == 1){
-			 openWindow("popupContainer");
-		} 
-		//Pas d'autoupdate, c'est impossible en version portable
 }
 
 async function loadConfig()
@@ -196,10 +186,11 @@ function openProject(type = "trails", id = "Sky", game = 0)
     menu = $('.Trails'); // On vérifie quel menu doit disparaître ; et grâce à ça, on sait aussi lequel doit ré-apparaître !
     if(!$('#modeTrails').hasClass('active'))
         menu = $('.Retro');
-
+	$('#map-svg').css('display', 'none');
     $('.gameInfos').css('display', 'inline-block');
     $('.gameCredits').css('display', 'none');
-
+	
+	
     gameLoaded = projectsList[type][id]['games'][game];
 	
     let gameName = gameLoaded['name'];
@@ -238,7 +229,8 @@ function openProject(type = "trails", id = "Sky", game = 0)
         if($('.filePath').hasClass('noPath') && fs.existsSync(element + directorySeparator + gameLoaded['steamFolderName'] + directorySeparator))
             $('.filePath').removeClass("noPath").addClass("okPath").html(element + directorySeparator + gameLoaded['steamFolderName'] + directorySeparator);
     });*/
-    $('.filePath').removeClass("noPath").addClass("okPath").html(installationPath + directorySeparator);
+	
+    $('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
     // On affiche les versions des patchs et des voix que l'utilisateur possède, et celles disponibles
 	
 
@@ -280,6 +272,7 @@ function goHome()
             opacity: 1
         }, config["speedAnimation"]);
     }, config["speedAnimation"]);
+	$('#map-svg').css('display', 'block');
 }
 
 // Change l'image affichée ; mettre un nombre négatif pour afficher l'image précédente
@@ -446,7 +439,6 @@ function calculateAndDisplayTimeRemaining(targetDate) {
 
 function updateGUI(){
 	let color = "#6CDC3D";
-	$('#installPatch').removeClass("disabled");
 	if (!currentState.isThereACountdown){
 		counting = false;
 		
@@ -737,7 +729,7 @@ async function downloadFiles() {
 	//la seule solution : fermer d'abord Steam puis éditer le vdf.
 	//dans ce cas il devrait appliquer la LaunchOption au fichier sur le cloud au démarrage.
 	//Note 3 : la moindre erreur dans le fichier vdf conduit Steam à supprimer la section problématique (ex : mettre des " à l'intérieur de " pour un string)
-	if (isRunningOnSteamDeck()){//
+	if (isRunningOnDeck){//
 		const steamUserFolder = "/home/deck/.local/share/Steam/userdata"
 		//const steamUserFolder = "C:\\Program Files (x86)\\Steam\\userdata"
 		const files = fs.readdirSync(steamUserFolder, { withFileTypes: true });
@@ -1024,7 +1016,7 @@ function getGivenGame(game) {
         }
       }
     }
-  } else if (isRunningOnSteamDeck()) { //On va juste gérer le steam deck, le reste c'est trop chiant
+  } else { //On va juste gérer le steam deck, le reste c'est trop chiant
     const list = [];
 
     if (!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf')) {
@@ -1042,15 +1034,13 @@ function getGivenGame(game) {
     }
     for (const path of list) {
       if (fs.existsSync(path + game['steamFolderName'])) {
+		isRunningOnDeck = true;
         return path + game['steamFolderName'];
       }
     }
+	
   }
-  else{
-		console.log("OS incompatible");
-  }
-
-  return null; // Return null if no suitable path is found
+  return "Jeu non détecté"; // Return null if no suitable path is found
 }
 
 
@@ -1094,16 +1084,7 @@ async function installUpdate() {
 	popupContent.appendChild(closeButton);
 }
 
-function isRunningOnSteamDeck() {
-	try {
-	let os = require("os");
-	let info = `${os.type()} ${os.release()} ${os.platform()}`.toLowerCase();
-	let list = ["valve", "steam"];
-	return info.includes("linux") && list.some(x => info.includes(x));
-	} catch (e) {
-	return false;
-	}
-}
+
 function openWindow(windowID){
 	document.getElementById(windowID).style.display = 'flex';
 }
@@ -1163,4 +1144,394 @@ function playButton() {
 	{
 		downloadFiles();
 	}
+}
+
+let markersCreated = false;
+
+
+function createMap() {
+    
+	let tooltip = document.querySelector('.map_tooltip');
+
+	if (!tooltip) {
+		tooltip = document.createElement('div');
+		tooltip.className = 'map_tooltip';
+		document.body.appendChild(tooltip);
+	}
+	let count = 0;
+
+	// Create an object to store markers grouped by location
+	const markersByLocation = {};
+
+	Object.entries(projectsList["trails"]).forEach(([arcKey, arcValue]) => {
+		// Iterate through all arcs
+		Object.entries(arcValue["games"]).forEach(([gameKey, gameValue]) => {
+			// Iterate through each game in the current arc
+
+			let marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+			marker.setAttribute("class", "marker"); // Add a class for identification
+			marker.setAttribute("r", "11");
+			marker.setAttribute("fill", '#FF0000');
+			marker.setAttribute("stroke", "black");
+			marker.setAttribute("stroke-width", "2");
+
+			document.getElementById("map-svg").appendChild(marker);
+
+			// Store game data in the Map
+			const gameData = {
+				gameId: gameKey,
+				arcId: arcKey,
+				data: gameValue
+			};
+
+			const markerDataMap = new Map();
+			markerDataMap.set("gameData", gameValue);
+			marker.markerDataMap = markerDataMap;
+
+			updateMarkerColor(marker);
+
+			marker.setAttribute("cx", gameValue.locationOnMap.x.toString()); // Use position from JSON
+			marker.setAttribute("cy", gameValue.locationOnMap.y.toString());
+
+			marker.addEventListener('mouseenter', handleMarkerEnter);
+			marker.addEventListener('mouseleave', handleMarkerLeave);
+			marker.addEventListener('click', handleMarkerClick);
+
+			// Group markers based on their location
+			const locationKey = `${gameValue.locationOnMap.x}-${gameValue.locationOnMap.y}`;
+			if (!markersByLocation[locationKey]) {
+				markersByLocation[locationKey] = [];
+			}
+			markersByLocation[locationKey].push(marker);
+
+			count = count + 1;
+		});
+	});
+	updateMarkersOnCurrentZoom(1.0);
+	
+	var beforePan = function (oldPan, newPan) {
+			var sizes = this.getSizes();
+			var gutterWidth = sizes.width;
+			var gutterHeight = sizes.height;
+			var leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + gutterWidth;
+			var rightLimit = sizes.width - gutterWidth - (sizes.viewBox.x * sizes.realZoom);
+			var topLimit = -((sizes.viewBox.y + sizes.viewBox.height) * sizes.realZoom) + gutterHeight;
+			var bottomLimit = sizes.height - gutterHeight - (sizes.viewBox.y * sizes.realZoom);
+
+			var customPan = {
+				x: Math.max(leftLimit, Math.min(rightLimit, newPan.x)),
+				y: Math.max(topLimit, Math.min(bottomLimit, newPan.y))
+			};
+			return customPan;
+    };
+	function onZoom(currZoom) {
+    // Assume markersByLocation is the object containing arrays of markers grouped by their location
+		updateMarkersOnCurrentZoom(currZoom);
+    
+	}
+
+	function updateMarkersOnCurrentZoom(currZoom){
+		Object.values(markersByLocation).forEach(markerGroup => {
+        // markerGroup is an array of markers with the same location
+        const numMarkers = markerGroup.length;
+
+        if (numMarkers > 1) {
+            // Get the current position of the first marker
+            const fixedPositionX = parseFloat(markerGroup[0].getAttribute('cx'));
+            const fixedPositionY = parseFloat(markerGroup[0].getAttribute('cy'));
+
+            // Calculate the angle between each marker
+            const angleIncrement = (2 * Math.PI) / numMarkers;
+
+            for (let i = 1; i < numMarkers; i++) {
+                // Calculate the new position for each subsequent marker
+                const angle = i * angleIncrement;
+                const radius = 11 / currZoom; // Adjust radius as needed
+
+                const newX = fixedPositionX + 2 * radius * Math.cos(angle);
+                const newY = fixedPositionY + 2 * radius * Math.sin(angle);
+
+                // Set the new position for each subsequent marker
+                markerGroup[i].setAttribute('cx', newX);
+                markerGroup[i].setAttribute('cy', newY);
+            }
+        }
+
+        // Adjust the size and stroke width for each marker based on the zoom level
+        markerGroup.forEach(marker => {
+            const markerSize = 11; // Adjust size as needed
+            marker.setAttribute('r', markerSize / currZoom);
+
+            const strokeWidth = 2 / currZoom; // Adjust stroke width as needed
+            marker.setAttribute('stroke-width', strokeWidth);
+        });
+    });
+		
+		
+	}
+	//dans un premier temps on crée le zoom/panning de la carte.
+	var panZoomMap = svgPanZoom('#map-svg', {
+        zoomEnabled: true,
+        controlIconsEnabled: false,
+        fit: 1,
+        center: 1,
+        zoomScaleSensitivity: 0.6,
+        minZoom: 1,
+        beforePan: beforePan,
+		onZoom: onZoom,
+		preventMouseEventsDefault: true,
+		dblClickZoomEnabled: false
+
+    });
+	
+	
+	function handleMarkerEnter(event) {
+		const marker = event.target;
+		const matrix = marker.getScreenCTM();
+		const zoomLevel = matrix.a;
+		
+		const markerDataMap = marker.markerDataMap; 
+		const gameData = markerDataMap.get("gameData"); 
+
+		const name = gameData.name;
+		const id = gameData.id; 
+		const status = gameData.status;
+		const inGameDate = gameData.inGameDate;
+		const steamId = gameData.steamId;
+		const availableLanguages = gameData.availableLanguages;
+		let imageURL = steamId === -1
+			? `images/${id}.png`
+			: `https://cdn.akamai.steamstatic.com/steam/apps/${steamId}/header.jpg`;
+
+		updateMarkerColor(marker);
+
+		marker.setAttribute('stroke', '#FFFF00');
+		marker.setAttribute('stroke-width', 2 / zoomLevel);
+
+		const mouseX = event.clientX;
+		const mouseY = event.clientY;
+		tooltip.innerHTML = `
+			<h2 title="${name}">${name}</h2>
+			<p style="text-align: left; font-size: 1.2em; margin-left: 15%;">
+				<u>Date (Calendrier septien)</u> : ${inGameDate}<br>
+				<u>Statut du patch</u> : <span style="color: ${getColorForStatus(status)};">${status}</span><br>
+				<u>Langues disponibles</u> : ${availableLanguages}
+			</p>
+			<img src="${imageURL}" alt="Image"/>
+		`;
+		tooltip.style.display = 'block';
+
+		positionTooltip(tooltip,marker);
+}
+
+function updateMarkerColor(marker){
+	const markerDataMap = marker.markerDataMap; 
+	const gameData = markerDataMap.get("gameData"); 
+	const status = gameData.status;
+	
+	switch (status) {
+		case "Indisponible":
+			marker.setAttribute('fill', 'red');
+			break;
+
+		case "Disponible bientôt":
+			marker.setAttribute('fill', 'orange');
+			break;
+
+		case "Disponible":
+			marker.setAttribute('fill', 'green');
+			break;
+
+		default:
+			// Handle other status conditions if needed
+			marker.setAttribute('fill', 'red');
+			marker.setAttribute('stroke', 'red');
+			break;
+	
+		
+	}
+}
+
+// Helper function to get color based on patch status
+function getColorForStatus(status) {
+    switch (status) {
+        case "Indisponible":
+            return 'red';
+
+        case "Disponible bientôt":
+            return 'orange';
+
+        case "Disponible":
+            return 'green';
+
+        default:
+            return 'black'; // Default color for other status conditions
+    }
+}
+
+	function handleMarkerLeave(event) {
+		const marker = event.target;
+		marker.setAttribute("stroke", "black");
+		tooltip.style.display = 'none';
+	}
+
+	function handleMarkerClick(event) {
+		const marker = event.target;
+		const gameId = marker.dataset.gameId;
+		const markerDataMap = marker.markerDataMap; 
+		const gameData = markerDataMap.get("gameData"); 
+		if ((gameData.status == "Disponible bientôt") || (gameData.status == "Disponible"))
+			openProject(type = "trails", id = gameId, game = 0);
+	}
+
+function positionTooltip(tooltip, marker) {
+    const positions = [
+        ["top-left", "bottom-right"],
+        ["middle-top", "middle-bottom"],
+        ["top-right", "bottom-left"],
+        ["middle-right", "middle-left"],
+        ["bottom-right", "top-left"],
+        ["middle-bottom", "middle-top"],
+        ["bottom-left", "top-right"],
+        ["middle-left", "middle-right"]
+    ];
+
+    let bestPosition = null;
+    let minSurfaceArea = Infinity;
+
+    for (const [point1, point2] of positions) {
+        const tooltipPos = calculateTooltipPosition(marker, tooltip, point1, point2);
+		
+		//Pour une tooltip complètement visible à l'écran, la fonction suivante doit retourner 0.
+		//Sinon elle retourne la surface qui dépasse de la fenêtre, en privilégiant du coup la position qui donne la plus petite surface à l'extérieur de la fenêtre.
+        const surfaceArea = calculateSurfaceAreaOutsideContainer(tooltipPos, tooltip.offsetWidth, tooltip.offsetHeight);
+
+        if (surfaceArea < minSurfaceArea) {
+            minSurfaceArea = surfaceArea;
+            bestPosition = tooltipPos;
+        }
+    }
+
+    if (bestPosition) {
+        // Adjust position based on the best position
+        tooltip.style.left = `${bestPosition.left}px`;
+        tooltip.style.top = `${bestPosition.top}px`;
+
+        const availableWidth = tooltip.offsetWidth - minSurfaceArea;
+        const availableHeight = tooltip.offsetHeight - minSurfaceArea;
+
+        // Find the aspect ratio of the image
+        const imgElement = tooltip.querySelector('img');
+        if (imgElement) {
+            const imgAspectRatio = imgElement.width / imgElement.height;
+
+            // Calculate the maximum size while preserving aspect ratio
+            let adjustedWidth = Math.min(availableWidth, availableHeight * imgAspectRatio);
+            let adjustedHeight = adjustedWidth / imgAspectRatio;
+
+            // Ensure the image stays within the tooltip boundaries
+            if (adjustedHeight > availableHeight) {
+                adjustedHeight = availableHeight;
+                adjustedWidth = adjustedHeight * imgAspectRatio;
+            }
+
+            // Set the adjusted size
+            imgElement.style.width = `${adjustedWidth}px`;
+            imgElement.style.height = `${adjustedHeight}px`;
+        }
+    }
+
+    return bestPosition;
+}
+
+function calculateSurfaceAreaOutsideContainer(tooltipPos, tooltipWidth, tooltipHeight) {
+    const container = document.getElementById('mainMenu');
+    const containerRect = container.getBoundingClientRect();
+
+    const tooltipRect = {
+        left: tooltipPos.left,
+        top: tooltipPos.top,
+        right: tooltipPos.left + tooltipWidth,
+        bottom: tooltipPos.top + tooltipHeight
+    };
+
+    // Calculate the surface area outside the container
+    const outsideLeft = Math.max(0, containerRect.left - tooltipRect.left);
+    const outsideRight = Math.max(0, tooltipRect.right - containerRect.right);
+    const outsideTop = Math.max(0, containerRect.top - tooltipRect.top);
+    const outsideBottom = Math.max(0, tooltipRect.bottom - containerRect.bottom);
+
+    return outsideLeft + outsideRight + outsideTop + outsideBottom;
+}
+function calculateTooltipPosition(marker, tooltip, point1, point2) {
+	
+	const safetyOffset = 10;
+    const [x1, y1] = getPointCoordinates(marker, point1);
+    const [x2, y2] = getPointCoordinates(tooltip, point2);
+
+    const markerRect = marker.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const tooltipWidth = tooltipRect.width;
+    const tooltipHeight = tooltipRect.height;
+
+    let tooltipPos = {};
+    switch (`${point1}-${point2}`) {
+        case "top-left-bottom-right":
+            tooltipPos = { top: y1 - tooltipHeight - safetyOffset, left: x1 - tooltipWidth - safetyOffset};
+            break;
+        case "middle-top-middle-bottom":
+            tooltipPos = { top: y1 - tooltipHeight - safetyOffset, left: x1 - tooltipWidth / 2 };
+            break;
+        case "top-right-bottom-left":
+            tooltipPos = { top: y1 - tooltipHeight - safetyOffset, left: x1 + safetyOffset };
+            break;
+        case "middle-right-middle-left":
+            tooltipPos = { top: y1 - tooltipHeight / 2, left: x1  + safetyOffset };
+            break;
+        case "bottom-right-top-left":
+            tooltipPos = { top: y1 + safetyOffset, left: x1 + safetyOffset};
+            break;
+        case "middle-bottom-middle-top":
+            tooltipPos = { top: y1 + safetyOffset, left: x1 - tooltipWidth / 2};
+            break;
+        case "bottom-left-top-right":
+            tooltipPos = { top: y1 + safetyOffset, left: x1 - tooltipWidth - safetyOffset};
+            break;
+        case "middle-left-middle-right":
+            tooltipPos = { top: y1 - tooltipHeight / 2, left: x1 - tooltipWidth - safetyOffset};
+            break;
+        default:
+            tooltipPos = { top: 0, left: 0 }; // Default to the bottom-right position
+            break;
+    }
+	console.log(x1,y1, tooltipWidth, tooltipHeight);
+
+    return tooltipPos;
+}
+
+function getPointCoordinates(element, point) {
+    const rect = element.getBoundingClientRect();
+
+    switch (point) {
+        case "top-left":
+            return [rect.left, rect.top];
+        case "middle-top":
+            return [rect.left + rect.width / 2, rect.top];
+        case "top-right":
+            return [rect.right, rect.top];
+        case "middle-right":
+            return [rect.right, rect.top + rect.height / 2];
+        case "bottom-right":
+            return [rect.right, rect.bottom];
+        case "middle-bottom":
+            return [rect.left + rect.width / 2, rect.bottom];
+        case "bottom-left":
+            return [rect.left, rect.bottom];
+        case "middle-left":
+            return [rect.left, rect.top + rect.height / 2];
+        default:
+            return [0, 0];
+    }
+}
+
 }

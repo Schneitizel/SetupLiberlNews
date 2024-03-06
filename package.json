@@ -7,7 +7,7 @@
   "scripts": {
     "test": "test",
     "start": "electron .",
-	  "build": "electron-builder"
+    "build": "electron-builder"
   },
   "author": "Schneitizel S. Sekai",
   "license": "ISC",
@@ -17,10 +17,11 @@
     "electron-packager": "^17.1.2"
   },
   "dependencies": {
-    "jquery": "^3.7.1",
     "bluebird": "^3.7.2",
+    "jquery": "^3.7.1",
     "node-fetch": "^2.6.7",
     "node-stream-zip": "^1.15.0",
+    "svg-pan-zoom": "^3.6.1",
     "yauzl": "^2.10.0"
   },
   "build": {
@@ -42,15 +43,17 @@
       "images/**/*",
       "index.html"
     ],
-	"portable": {
-		"useZip": true,
-		"splashImage": "./images/splash.bmp" 
-	},
+    "portable": {
+      "useZip": true,
+      "splashImage": "./images/splash.bmp"
+    },
     "win": {
       "target": [
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     }
