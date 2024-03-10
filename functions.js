@@ -1029,7 +1029,7 @@ function getGivenGame(game) {
 		for (const path of list) {
 		  if (fs.existsSync(path + directorySeparator + game['steamFolderName'])) {
 			
-			return path + game['steamFolderName'];
+			return path + directorySeparator + game['steamFolderName'];
 		  }
 		}
   }
@@ -1148,7 +1148,11 @@ function createMap() {
 
 	if (!tooltip) {
 		tooltip = document.createElement('div');
+		tooltip.style.display = 'block';
 		tooltip.className = 'map_tooltip';
+		
+		tooltip.style.left = `-9999px`;
+        tooltip.style.top = `-9999px`;
 		document.body.appendChild(tooltip);
 	}
 	let count = 0;
@@ -1236,7 +1240,7 @@ function createMap() {
 
             for (let i = 1; i < numMarkers; i++) {
                 // Calculate the new position for each subsequent marker
-                const angle = i * angleIncrement;
+                const angle = -(i-1) * angleIncrement ;
                 const radius = 11 / currZoom; // Adjust radius as needed
 
                 const newX = fixedPositionX + 2 * radius * Math.cos(angle);
@@ -1276,43 +1280,77 @@ function createMap() {
     });
 	
 	
-	function handleMarkerEnter(event) {
-		const marker = event.target;
-		const matrix = marker.getScreenCTM();
-		const zoomLevel = matrix.a;
-		
-		const markerDataMap = marker.markerDataMap; 
-		const gameData = markerDataMap.get("gameData"); 
+function handleMarkerEnter(event) {
+    const marker = event.target;
+    const matrix = marker.getScreenCTM();
+    const zoomLevel = matrix.a;
 
-		const name = gameData.name;
-		const id = gameData.id; 
-		const status = gameData.status;
-		const inGameDate = gameData.inGameDate;
-		const steamId = gameData.steamId;
-		const availableLanguages = gameData.availableLanguages;
-		let imageURL = steamId === -1
-			? `images/${id}.png`
-			: `https://cdn.akamai.steamstatic.com/steam/apps/${steamId}/header.jpg`;
+    const markerDataMap = marker.markerDataMap;
+    const gameData = markerDataMap.get("gameData");
 
-		updateMarkerColor(marker);
+    const name = gameData.name;
+    const id = gameData.id;
+    const status = gameData.status;
+    const inGameDate = gameData.inGameDate;
+    const steamId = gameData.steamId;
+    const availableLanguages = gameData.availableLanguages;
+    let imageURL = steamId === -1
+        ? `images/${id}.png`
+        : `https://cdn.akamai.steamstatic.com/steam/apps/${steamId}/header.jpg`;
 
-		marker.setAttribute('stroke', '#FFFF00');
-		marker.setAttribute('stroke-width', 2 / zoomLevel);
+    updateMarkerColor(marker);
 
-		const mouseX = event.clientX;
-		const mouseY = event.clientY;
-		tooltip.innerHTML = `
-			<h2 title="${name}">${name}</h2>
-			<p style="text-align: left; font-size: 1.2em; margin-left: 15%;">
-				<u>Date (Calendrier septien)</u> : ${inGameDate}<br>
-				<u>Statut du patch</u> : <span style="color: ${getColorForStatus(status)};">${status}</span><br>
-				<u>Langues disponibles</u> : ${availableLanguages}
-			</p>
-			<img src="${imageURL}" alt="Image"/>
-		`;
-		tooltip.style.display = 'block';
+    marker.setAttribute('stroke', '#FFFF00');
+    marker.setAttribute('stroke-width', 2 / zoomLevel);
 
-		positionTooltip(tooltip,marker);
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+
+    // Create an image element
+    const imageElement = new Image();
+
+    // Set up a counter to keep track of loaded elements
+    let loadedElements = 0;
+
+    // Add a load event listener for the image
+    imageElement.addEventListener('load', function () {
+        loadedElements++;
+
+        // Check if both the text and the image are loaded
+        if (loadedElements === 2) {
+            // Update the tooltip content
+            tooltip.innerHTML = `
+                <h2 title="${name}">${name}</h2>
+                <p style="text-align: left; font-size: 1.2em; margin-left: 15%;">
+                    <u>Date (Calendrier septien)</u> : ${inGameDate}<br>
+                    <u>Statut du patch</u> : <span style="color: ${getColorForStatus(status)};">${status}</span><br>
+                    <u>Langues</u> : ${availableLanguages}
+                </p>
+                <img src="${imageURL}" alt="Image"/>
+            `;
+
+            // Display the tooltip
+            tooltip.style.display = 'block';
+
+            // Position the tooltip after the image is fully loaded
+            positionTooltip(tooltip, marker);
+        }
+    });
+
+    // Add a load event listener for the tooltip image
+    imageElement.src = imageURL;
+
+    // Hide the tooltip initially
+    tooltip.style.display = 'none';
+
+    // Increment the loadedElements counter for the text
+    loadedElements++;
+
+    // Display the tooltip after the text is loaded
+    if (loadedElements === 2) {
+        positionTooltip(tooltip, marker);
+        tooltip.style.display = 'block';
+    }
 }
 
 function updateMarkerColor(marker){
@@ -1363,7 +1401,9 @@ function getColorForStatus(status) {
 	function handleMarkerLeave(event) {
 		const marker = event.target;
 		marker.setAttribute("stroke", "black");
-		tooltip.style.display = 'none';
+		//tooltip.style.display = 'none';
+		tooltip.style.left = `-9999px`;
+        tooltip.style.top = `-9999px`;
 	}
 
 	function handleMarkerClick(event) {
@@ -1404,32 +1444,10 @@ function positionTooltip(tooltip, marker) {
     }
 
     if (bestPosition) {
-        // Adjust position based on the best position
+
         tooltip.style.left = `${bestPosition.left}px`;
         tooltip.style.top = `${bestPosition.top}px`;
-
-        const availableWidth = tooltip.offsetWidth - minSurfaceArea;
-        const availableHeight = tooltip.offsetHeight - minSurfaceArea;
-
-        // Find the aspect ratio of the image
-        const imgElement = tooltip.querySelector('img');
-        if (imgElement) {
-            const imgAspectRatio = imgElement.width / imgElement.height;
-
-            // Calculate the maximum size while preserving aspect ratio
-            let adjustedWidth = Math.min(availableWidth, availableHeight * imgAspectRatio);
-            let adjustedHeight = adjustedWidth / imgAspectRatio;
-
-            // Ensure the image stays within the tooltip boundaries
-            if (adjustedHeight > availableHeight) {
-                adjustedHeight = availableHeight;
-                adjustedWidth = adjustedHeight * imgAspectRatio;
-            }
-
-            // Set the adjusted size
-            imgElement.style.width = `${adjustedWidth}px`;
-            imgElement.style.height = `${adjustedHeight}px`;
-        }
+        
     }
 
     return bestPosition;
@@ -1495,7 +1513,6 @@ function calculateTooltipPosition(marker, tooltip, point1, point2) {
             tooltipPos = { top: 0, left: 0 }; // Default to the bottom-right position
             break;
     }
-	console.log(x1,y1, tooltipWidth, tooltipHeight);
 
     return tooltipPos;
 }
@@ -1526,3 +1543,12 @@ function getPointCoordinates(element, point) {
 }
 
 }
+/*function logMousePosition(event) {
+    const mouseX = event.clientX - 125;
+    const mouseY = event.clientY;
+
+    console.log(`Mouse Position: X = ${mouseX}, Y = ${mouseY}`);
+}
+
+// Add an event listener to log the mouse position when the mouse moves
+document.addEventListener('mousemove', logMousePosition);*/
