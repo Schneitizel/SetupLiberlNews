@@ -7,6 +7,10 @@ const config = require("./package.json");
 // Défini la taille de la fenêtre ; une plus grande valeur signifie une fenêtre plus grande (Défaut : 1.1)
 const multiplicator = 1.1;
 
+const remoteMain = require('@electron/remote/main');
+
+remoteMain.initialize();
+
 const loadMainWindow = async () => {
 
     // Permet d'obtenir un effet 16:9 adapté à la taille de la résolution de l'utilisateur
@@ -28,9 +32,9 @@ const loadMainWindow = async () => {
     });
 
     mainWindow.removeMenu(); // Pas de "Menu", "Options" etc...
-
+	remoteMain.enable(mainWindow.webContents);
     mainWindow.setTitle("Installateur - Liberl News - Version " + config["version"]);
-    //mainWindow.webContents.openDevTools({ mode: 'detach' }); // Décommenter cette ligne pour afficher les options de développeur ; utiles pour régler l'interface
+    mainWindow.webContents.openDevTools({ mode: 'detach' }); // Décommenter cette ligne pour afficher les options de développeur ; utiles pour régler l'interface
 	mainWindow.loadFile(path.join(__dirname, "loading.html")); // Chargement de la page html principale
 }
 

@@ -22,7 +22,8 @@
     "node-fetch": "^2.6.7",
     "node-stream-zip": "^1.15.0",
     "svg-pan-zoom": "^3.6.1",
-    "yauzl": "^2.10.0"
+    "yauzl": "^2.10.0",
+	"@electron/remote": "^2.0.1"
   },
   "build": {
     "appId": "com.liberlnews.installer",

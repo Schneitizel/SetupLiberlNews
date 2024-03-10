@@ -15,12 +15,7 @@
 			
 				
 			<div class="mainMenu" id="mainMenu">
-				<svg id="map-svg" xmlns="http://www.w3.org/2000/svg">
-				
-				
-					<image href="./images/map_test.svg" width="100%" height="100%" />
-					
-				</svg>
+								
 				<div class="displayGame">
 
 					<i onclick="goHome()" class="fa-solid fa-house"></i>
@@ -33,8 +28,7 @@
 							<i onclick="changeImage(-1)" class="fa-solid fa-arrow-left"></i>
 							<i onclick="changeImage(1)" class="fa-solid fa-arrow-right"></i>
 						</div>
-						<div class="inputFolder">
-							<input id="file" type="file" onchange="onChangePath();" webkitdirectory directory/>
+						<div class="inputFolder" onclick="selectFolder()">
 							<div class="filePath">Aucun chemin d'accès spécifié</div>
 						</div>
 						<div class="gauge" id="projectBar"></div>
@@ -84,13 +78,18 @@
 			<div class="popup-content">
 				<span onclick="closeWindow('steamWarning')" class="close-button topright">&times;</span>
 			  <h2>Attention !</h2>
-			  <p>Steam doit être fermé afin de pouvoir installer le jeu sur Steam Deck.<br>
-			  Veillez bien à sauvegarder tout progrès en cours avant de continuer.</p>
-			  <button id="continueButton">Je continue</button>
-			  <button id="giveUpButton">J'abandonne</button>
+			  <p>Veuillez fermer Steam avant de continuer.<br>
+			  <button id="continueButton">J'ai fermé Steam</button>
+			  <button id="giveUpButton">Je laisse tomber</button>
 			</div>
 		</div>
-		
+		<div class="popup-container" id="errorwindow">
+			<div class="popup-content">
+				<span onclick="closeWindow('errorwindow')" class="close-button topright">&times;</span>
+			  <h2>Attention !</h2>
+			  <p>Le dossier d'installation spécifié dans la barre en bas à gauche est introuvable.</p>
+			</div>
+		</div>
 		<div class="popup-container" id="HelpWindow">
 
 		  <div class="popup-content">

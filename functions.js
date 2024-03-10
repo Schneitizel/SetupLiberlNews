@@ -19,7 +19,10 @@ const agent = new https.Agent({
 });
 
 const svgpanzoom = require('svg-pan-zoom')
-const { shell } = require('electron');
+const {shell} = require('electron');
+const remote = require('@electron/remote');
+const dialog = remote.dialog;
+
 // Variables globales
 var currentState;
 var config;
@@ -62,6 +65,13 @@ loadingEvents.on('loaded', async () => {
 });
 
 
+function areWeOnDeck(){
+	
+	if (!(process.platform === 'win32' && os.homedir() != 'C:\\users\\steamuser')) 
+		return true;
+}
+
+
 $(document).ready(async function(){
 	
     await loadConfig();
@@ -91,36 +101,20 @@ $(document).ready(async function(){
 
 async function loadElements()
 {
-
+	isRunningOnDeck = areWeOnDeck();
     let version = require('./package.json');
     $('.setupVersion').html('Version de l\'installateur : ' + version['version']);
-
+	//$('.setupVersion').html('Version de l\'installateur : ' + os.homedir() + " " + process.platform);
     $('.footer').html(config["footerText"]); // On affiche le message du footer
 	
 	//Par défaut, toujours afficher le mode Trails, mais on charge les jeux rétros pour se préparer au cas où l'utilisateur change de mode
-	createMap();
+	if (!isRunningOnDeck)
+		createMap();
+	else{
+		createClassicMenu("trails"); 
+	}
+	createClassicMenu("retro"); 
 	
-    // Et on boucle aussi les projets rétro ! (Note : la carte est exclusive aux Trails, les jeux rétro auront un menu dans ce style là :)
-    Object.entries(projectsList["retro"]).forEach(([key, value]) => {
-        let games = "";
-	
-        Object.entries(value['games']).forEach(([keyGame, valueGame]) => {
-            let imageURL = "https://cdn.akamai.steamstatic.com/steam/apps/" + valueGame['steamId'] + "/header.jpg";
-            if(valueGame['steamId'] == -1) // Si le jeu est un jeu nom Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
-                imageURL = "images/" + valueGame['name'] + ".png";
-	
-            if(valueGame['patchVersion'] != '0') // Si un patch est disponible, on l'affiche
-            {
-                games = games + '<img onclick="openProject(\'retro\', \'' + key + '\', \'' + keyGame + '\')" src="' + imageURL + '">';
-                if(dataUser['projects'][valueGame["name"]] === undefined) // Si le projet n'existe pas dans les infos utilisateurs, on le créé
-                    dataUser['projects'][valueGame["name"]] = {"patch": null, "voice": null};
-            }
-        });
-	
-        if(games !== "") // Si pas de patch disponible, on affiche pas !
-            $('#retroGames').html($('#retroGames').html() + '<h1> <img src="images/' + value['icon'] + '.png">' + value['title'] + '</h1>' + games);
-    });
-
     writeConfig();
 	
 	var setupVersion = compareVersions(version['version'], config["latestInstallerVersion"]);
@@ -224,9 +218,6 @@ function openProject(type = "trails", id = "Sky", game = 0)
     // On essaye de trouver où se trouve le jeu, si l'utilisateur l'a d'installé sur Steam
 	
 	installationPath = getGivenGame(gameLoaded)
-	
-	
-    $('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
 
 	/*
 	Soit le patch n'est pas installé, les voix non plus, la case des voix n'est pas cochée => on installe que le patch (scénario le plus simple)
@@ -234,8 +225,7 @@ function openProject(type = "trails", id = "Sky", game = 0)
 	soit les voix sont installées mais pas le patch => on installe le patch
 	soit le patch est installé mais pas les voix, mais la case est cocheé => on installe les voix
 	si y a un problème à un quelconque moment l'utilisateur peut cliquer sur un bouton désinstaller qui va enlever voix et patch (table rase). ensuite il pourra cocher la case des voix et installer et ça lui donnera voix et patch*/
-    updateCurrentState();
-	updateGUI();
+    onChangePath();
 
 	
     menu.animate({
@@ -249,6 +239,7 @@ function openProject(type = "trails", id = "Sky", game = 0)
             opacity: 1
         }, config["speedAnimation"]);
     }, config["speedAnimation"]);
+	
 }
 
 // Permet de retourner à l'écran d'accueil
@@ -265,7 +256,8 @@ function goHome()
             opacity: 1
         }, config["speedAnimation"]);
     }, config["speedAnimation"]);
-	$('#map-svg').css('display', 'block');
+	if (!isRunningOnDeck)
+		$('#map-svg').css('display', 'block');
 }
 
 // Change l'image affichée ; mettre un nombre négatif pour afficher l'image précédente
@@ -695,21 +687,28 @@ function isSteamRunning() {
         const stdout = execSync(cmd, { encoding: 'utf-8' });
         return stdout.toLowerCase().indexOf(query.toLowerCase()) > -1;
     } catch (err) {
-        // Handle errors if any (e.g., command not found)
+        console.log(err);
         return false;
     }
 }
 
 // Lancé quand on appuie sur le bouton "Installer/Mise à jour"
 async function downloadFiles() {
-	
+	currentPath = $('.filePath').html();
+	console.log(currentPath);
+	const stats = fs.statSync(currentPath);
+
+    if (!stats.isDirectory()) {
+		openWindow('errorwindow');
+		return;
+    } 
 	updateCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
 	updateGUI();
 	
     // Si le bouton "Installer" est désactivé, on ne fait rien
     if($('#installPatch').hasClass('disabled'))
         return;
-	
+	$('#projectBar').css("display", "block");
     $('#installPatch').addClass("disabled");
 	$('#uninstallAll').addClass("disabled");
 	
@@ -722,64 +721,59 @@ async function downloadFiles() {
 	//la seule solution : fermer d'abord Steam puis éditer le vdf.
 	//dans ce cas il devrait appliquer la LaunchOption au fichier sur le cloud au démarrage.
 	//Note 3 : la moindre erreur dans le fichier vdf conduit Steam à supprimer la section problématique (ex : mettre des " à l'intérieur de " pour un string)
-	if (isRunningOnDeck){//
-		const steamUserFolder = "/home/deck/.local/share/Steam/userdata"
-		//const steamUserFolder = "C:\\Program Files (x86)\\Steam\\userdata"
+	if (isRunningOnDeck){
+		const steamUserFolder = "Z:\\home\\deck\\.local\\share\\Steam\\userdata"
 		const files = fs.readdirSync(steamUserFolder, { withFileTypes: true });
 		
-		
+		console.log("On regarde là-dedans dans un premier temps :", steamUserFolder);
 		for (const file of files)  {
 			const fullPath = path.join(steamUserFolder, file.name);
-
+			
 			if (file.isDirectory()) {
 				const userID = file.name;
+				console.log("Ca doit correspondre à une UserID :", userID);
+				var giveUp = false;
+				//Note : aucun moyen de communiquer avec proton depuis wine (si j'ai bien compris), enfin entre Linux et le Windows sur lequel tourne l'installateur, du coup je peux pas fermer Steam tout seul, du coup on demande à l'utilisateur
+				await new Promise((resolve) => {
+					openWindow('steamWarning');
+
+					document.getElementById('continueButton').addEventListener('click', () => {
+						closeWindow('steamWarning');
+						resolve();
+					});
+
+					document.getElementById('giveUpButton').addEventListener('click', () => {
+						giveUp = true;
+						closeWindow('steamWarning');
+						$('#installPatch').removeClass("disabled");
+						$('#uninstallAll').removeClass("disabled");
+						updateCurrentState(); // on actualise l'état
+						updateGUI();
+						resolve();
+						
+						
+					});
+				});
+				if ((giveUp)) return;
 				
-				if (isSteamRunning()){
-					var giveUp = false;
-					await new Promise((resolve) => {
-						openWindow('steamWarning');
+				/*const command = process.platform === 'win32' ? 'taskkill' : 'pkill';
+				const args = process.platform === 'win32' ? ['/F', '/IM', 'steam.exe'] : ['steam'];
 
-						// You can resolve the Promise when the user clicks "Je continue" or "Abandonner"
-						// For example, you can have a button click event that resolves the Promise
+				const steamProcess = spawn(command, args);
 
-						// Example using a button click event
-						document.getElementById('continueButton').addEventListener('click', () => {
-							closeWindow('steamWarning');
-							resolve();
-						});
+				steamProcess.on('close', (code) => {
+				  if (code === 0) {
+					console.log('Steam has been closed successfully.');
+					// Proceed with your code after Steam is closed.
+				  } else {
+					console.error(`Failed to close Steam. Exit code: ${code}`);
+				  }
+				});
 
-						document.getElementById('giveUpButton').addEventListener('click', () => {
-							giveUp = true;
-							closeWindow('steamWarning');
-							$('#installPatch').removeClass("disabled");
-							$('#uninstallAll').removeClass("disabled");
-							updateCurrentState(); // on actualise l'état
-							updateGUI();
-							resolve();
-							
-							
-						});
-					});
-					if ((giveUp)) return;
-					
-					const command = process.platform === 'win32' ? 'taskkill' : 'pkill';
-					const args = process.platform === 'win32' ? ['/F', '/IM', 'steam.exe'] : ['steam'];
-
-					const steamProcess = spawn(command, args);
-
-					steamProcess.on('close', (code) => {
-					  if (code === 0) {
-						console.log('Steam has been closed successfully.');
-						// Proceed with your code after Steam is closed.
-					  } else {
-						console.error(`Failed to close Steam. Exit code: ${code}`);
-					  }
-					});
-
-					steamProcess.on('error', (err) => {
-					  console.error(`Error while trying to close Steam: ${err.message}`);
-					});
-				}
+				steamProcess.on('error', (err) => {
+				  console.error(`Error while trying to close Steam: ${err.message}`);
+				});
+				*/
 
 				const vdfFilePath = steamUserFolder + directorySeparator + userID + directorySeparator + "config" + directorySeparator + "localconfig.vdf";
 				
@@ -984,8 +978,7 @@ function getRegistryValue(regKey, data) {
 // Crédits : Ashley A. Sekai (C.R.X.)
 function getGivenGame(game) {
   let i = 0;
-
-  if (process.platform === 'win32' && os.homedir() != 'C:\\users\\steamuser') {
+  if (!isRunningOnDeck) {
     const steamRegistryKey = `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${game['steamId']}`;
     const installationPath = getRegistryValue(steamRegistryKey, 'InstallLocation');
     if (installationPath !== null) {
@@ -1010,30 +1003,49 @@ function getGivenGame(game) {
       }
     }
   } else {
-		isRunningOnDeck = true;
 		const list = [];
-
-		if (!fs.existsSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf')) {
-		  list[0] = '/home/deck/.local/share/Steam/steamapps/common';
-		  list[1] = '/home/steam/.local/share/Steam/steamapps/common';
-		  list[2] = '/run/media/mmcblk0p1/steamapps/common';
+		const vdfFilePath = 'Z:\\home\\deck\\.local\\share\\Steam\\steamapps\\libraryfolders.vdf';
+		//const vdfFilePath = "C:\\Program Files (x86)\\Steam\\steamapps\\libraryfolders.vdf";
+		
+		if (!fs.existsSync(vdfFilePath)) {
+		  list[0] = 'Z:\\home\\deck\\.local\\share\\Steam\\steamapps\\common\\'+ game['steamFolderName'];
+		  list[1] = 'Z:\\home\\steam\\.local\\share\\Steam\\steamapps\\common\\'+ game['steamFolderName'];
+		  list[2] = 'Z:\\run\\media\\mmcblk0p1\\steamapps\\common\\'+ game['steamFolderName'];
+		  list[3] = 'Z:\\home\\deck\\.local\\share\\Steam\\steamapps\\common\\' + game['steamFolderName'];
 		} else {
-		  const listing = fs.readFileSync('/home/deck/.local/share/Steam/steamapps/libraryfolders.vdf').toString().split('"path"		');
-		  listing.forEach((value, index) => {
-			if (index > 0) {
-			  list[i] = value.split('"')[1] + '/steamapps/common';
-			  i++;
+			
+			const vdfContent = fs.readFileSync(vdfFilePath, 'utf8');
+			const parsedData = VDF.parse(vdfContent);
+			
+			const pathx = parsedData.get('libraryfolders')
+			console.log("vdf existe : ", fs.existsSync(vdfFilePath));
+			console.log(pathx);
+			let i = 0;
+			for (const [outerKey, outerValue] of pathx) {
+				console.log(`Outer key: ${outerKey}`);
+				var p = outerValue.get('path');
+				p = p.replace(/\//g, '\\');
+				p = 'Z:' + p;
+				
+				if (outerValue instanceof Map) {
+					list[i] = p + directorySeparator + 'steamapps' + directorySeparator + 'common' + directorySeparator + game['steamFolderName'];
+				} 
+				i++;
 			}
-		  });
+			
+			
 		}
 		for (const path of list) {
-		  if (fs.existsSync(path + directorySeparator + game['steamFolderName'])) {
-			
-			return path + directorySeparator + game['steamFolderName'];
+
+			var fullpath = path;
+			console.log("On teste " + fullpath);
+			if (fs.existsSync(fullpath)) {
+				return fullpath;
 		  }
 		}
   }
-  return "Jeu non détecté"; // Return null if no suitable path is found
+  
+  return "Jeu non détecté. Cliquez ici pour le spécifier."; // Return null if no suitable path is found
 }
 
 
@@ -1106,17 +1118,29 @@ function openinDefaultBrowser(url) {
     shell.openExternal(url);
 }
 function onChangePath() {
-    installationPath = document.getElementById("file").files[0].path
-	const stats = fs.statSync(installationPath);
-
-	if (stats.isFile()) {
-	  installationPath = path.dirname(installationPath);
-	}
+    // Now you have the selected folder path
+	try {
+		if (installationPath) {
+			const stats = fs.statSync(installationPath);
+		
+			if (!stats.isDirectory()) {
+				$('.filePath').addClass("noPath").html(installationPath);;
+				return;
+			} 
+			updateCurrentState(); // on actualise l'état
+			updateGUI();
+			$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
+			return;
+		}
+		else{
+			$('.filePath').addClass("noPath").html(installationPath);;
+			return;
+		}
+	} catch (error) {
+		$('.filePath').addClass("noPath").html(installationPath);;
+			return;
+		}
 	
-	console.log(installationPath)
-	updateCurrentState(); // on actualise l'état
-	updateGUI();
-	$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
 }
 function onChangeCheckbox() {
     updateCurrentState(); // on actualise l'état
@@ -1143,7 +1167,22 @@ let markersCreated = false;
 
 
 function createMap() {
-    
+	
+	let svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svgElement.setAttribute("id", "map-svg");
+
+    // Append the SVG element to the "mainMenu" div
+    const mainMenuElement = document.getElementById("mainMenu");
+	const firstChild = mainMenuElement.firstChild;
+	mainMenuElement.insertBefore(svgElement, firstChild);
+	
+    const imageElement = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    imageElement.setAttribute('href', './images/map_test.svg');
+    imageElement.setAttribute('width', '100%');
+    imageElement.setAttribute('height', '100%');
+
+    svgElement.appendChild(imageElement);
+	
 	let tooltip = document.querySelector('.map_tooltip');
 
 	if (!tooltip) {
@@ -1370,7 +1409,7 @@ function updateMarkerColor(marker){
 	
 	switch (status) {
 		case "Indisponible":
-			marker.setAttribute('fill', 'red');
+			marker.setAttribute('fill', '#a03030cc');
 			break;
 
 		case "Disponible bientôt":
@@ -1383,8 +1422,7 @@ function updateMarkerColor(marker){
 
 		default:
 			// Handle other status conditions if needed
-			marker.setAttribute('fill', 'red');
-			marker.setAttribute('stroke', 'red');
+			marker.setAttribute('fill', '#a03030cc');
 			break;
 	
 		
@@ -1553,6 +1591,41 @@ function getPointCoordinates(element, point) {
 }
 
 }
+
+function createClassicMenu(games_id){ //games = retro ou trails
+	const mainMenuElement = document.getElementById("mainMenu");
+	
+	const Element = document.createElement("div");
+	Element.classList.add("displayList", games_id);
+
+	const GamesElement = document.createElement("div");
+	GamesElement.id = games_id + "Games";
+	GamesElement.classList.add("game");
+	
+	Object.entries(projectsList[games_id]).forEach(([key, value]) => {
+		let games = "";
+	
+		Object.entries(value['games']).forEach(([keyGame, valueGame]) => {
+			
+			if(valueGame['patchVersion'] != '0') // Si un patch est disponible, on l'affiche
+			{
+				let imageURL = "https://cdn.akamai.steamstatic.com/steam/apps/" + valueGame['steamId'] + "/header.jpg";
+				if(valueGame['steamId'] == -1) // Si le jeu est un jeu nom Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
+					imageURL = "images/" + valueGame['name'] + ".png";
+				games = games + '<img onclick="openProject(\''+games_id+'\', \'' + key + '\', \'' + keyGame + '\')" src="' + imageURL + '">';
+				if(dataUser['projects'][valueGame["name"]] === undefined) // Si le projet n'existe pas dans les infos utilisateurs, on le créé
+					dataUser['projects'][valueGame["name"]] = {"patch": null, "voice": null};
+			}
+		});
+		if(games !== "") // Si pas de patch disponible, on affiche pas !
+			GamesElement.innerHTML = GamesElement.innerHTML + '<h1> <img src="images/' + value['icon'] + '.png">' + value['title'] + '</h1>' + games;
+	});
+	Element.appendChild(GamesElement);
+	const firstChild = mainMenuElement.firstChild;
+	mainMenuElement.insertBefore(Element, firstChild);
+}
+
+
 /*function logMousePosition(event) {
     const mouseX = event.clientX - 125;
     const mouseY = event.clientY;
@@ -1562,3 +1635,15 @@ function getPointCoordinates(element, point) {
 
 // Add an event listener to log the mouse position when the mouse moves
 document.addEventListener('mousemove', logMousePosition);*/
+
+function selectFolder(){
+	
+	const showDialog = remote.dialog.showOpenDialogSync({
+		properties: ['openDirectory']
+	});
+	if (showDialog && showDialog.length > 0) {
+		installationPath = showDialog[0];
+	} else {
+	}
+	onChangePath();
+  }

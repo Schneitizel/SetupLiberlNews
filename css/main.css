@@ -423,6 +423,7 @@ button#installPatch.disabled {
     display: flex;
     justify-content: center;
     align-items: center;
+	text-align: center;
 }
 
 #projectBar::before {
@@ -724,7 +725,7 @@ i.fa-info:hover {
 .horizontal-separator {
     height: 1px;
     background-color: #fff; /* Adjust color as needed */
-    margin: 20px 0; /* Adjust margin as needed */
+    margin: 10px 0; /* Adjust margin as needed */
     width: 100%; /* Full width */
 }
 
@@ -740,7 +741,7 @@ i.fa-info:hover {
 
 .vertical-stack {
   background-color: #fff;
-  padding: 20px;
+  padding: 0px;
   border-radius: 5px;
   box-shadow: none;
   text-align: center;
@@ -794,4 +795,9 @@ i.fa-info:hover {
 .glow {
     border: 2px solid #ffcc00; /* Yellow border as an example */
     box-shadow: 0 0 10px #ffcc00;
+}
+
+#InfoWindow .top-left img {
+    cursor: pointer;
+    margin-bottom: 10px; /* Adjust the value as needed */
 }
