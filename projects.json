@@ -19,7 +19,7 @@
           "exe_name": "ed6_win.exe",
           "status": "Disponible bientôt",
           "inGameDate": "Début S1202",
-          "locationOnMap": { "x": 293, "y": 416 },
+          "locationOnMap": { "x": 293, "y": 412 },
           "staff": [
             "A.isoce - traduction, programmation",
             "Aidown - traduction",
@@ -114,7 +114,7 @@
           "status": "Indisponible",
           "inGameDate": "Avril S1206",
           "availableLanguages": "Japonais, Anglais, Français",
-          "locationOnMap": { "x": 251, "y": 272 }
+          "locationOnMap": { "x": 248, "y": 272 }
         },
         "3": {
           "name": "Trails of Cold Steel IV",
@@ -124,7 +124,7 @@
           "status": "Indisponible",
           "inGameDate": "Août S1206",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 251, "y": 272 }
+          "locationOnMap": { "x": 248, "y": 272 }
         },
         "4": {
           "name": "Trails into Reverie",
