@@ -19,7 +19,7 @@
           "exe_name": "ed6_win.exe",
           "status": "Disponible bientôt",
           "inGameDate": "Début S1202",
-          "locationOnMap": { "x": 290, "y": 400 },
+          "locationOnMap": { "x": 293, "y": 416 },
           "staff": [
             "A.isoce - traduction, programmation",
             "Aidown - traduction",
@@ -68,7 +68,7 @@
           "status": "Indisponible",
           "inGameDate": "Septembre S1202",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 520, "y": 100 }
+          "locationOnMap": { "x": 527, "y": 124 }
         },
         "2": {
           "name": "Trails in the Sky The 3rd",
@@ -78,7 +78,7 @@
           "status": "Indisponible",
           "inGameDate": "Fin S1203",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 300, "y": 300 }
+          "locationOnMap": { "x": 303, "y": 316 }
         }
       }
     },
@@ -104,7 +104,7 @@
           "status": "Indisponible",
           "inGameDate": "Novembre S1204",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 300, "y": 180 }
+          "locationOnMap": { "x": 300, "y": 195 }
         },
         "2": {
           "name": "Trails of Cold Steel III",
@@ -114,7 +114,7 @@
           "status": "Indisponible",
           "inGameDate": "Avril S1206",
           "availableLanguages": "Japonais, Anglais, Français",
-          "locationOnMap": { "x": 236, "y": 270 }
+          "locationOnMap": { "x": 251, "y": 272 }
         },
         "3": {
           "name": "Trails of Cold Steel IV",
@@ -124,7 +124,7 @@
           "status": "Indisponible",
           "inGameDate": "Août S1206",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 236, "y": 270 }
+          "locationOnMap": { "x": 251, "y": 272 }
         },
         "4": {
           "name": "Trails into Reverie",
@@ -134,7 +134,7 @@
           "status": "Indisponible",
           "inGameDate": "Février S1207",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 380, "y": 280 }
+          "locationOnMap": { "x": 379, "y": 278 }
         }
       }
     },
@@ -150,7 +150,7 @@
           "status": "Indisponible",
           "inGameDate": "Janvier S1204",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 380, "y": 280}
+          "locationOnMap": { "x": 379, "y": 278 }
         },
         "1": {
           "name": "Trails to Azure",
@@ -160,7 +160,7 @@
           "status": "Indisponible",
           "inGameDate": "Août S1204",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 380, "y": 280 }
+          "locationOnMap": { "x": 379, "y": 278 }
         }
       }
     },
@@ -177,7 +177,7 @@
           "status": "Indisponible",
           "inGameDate": "S1208",
           "availableLanguages": "Japonais, Anglais [Fan]",
-          "locationOnMap": { "x": 490, "y": 310 }
+          "locationOnMap": { "x": 479, "y": 320 }
         },
         "1": {
           "name": "Kuro no Kiseki II -CRIMSON SiN-",
@@ -188,7 +188,7 @@
           "status": "Indisponible",
           "inGameDate": "S1209",
           "availableLanguages": "Japonais, Anglais [Fan]",
-          "locationOnMap": { "x": 490, "y": 310 }
+          "locationOnMap": { "x": 479, "y": 320 }
         },
         "2": {
           "name": "Kai no Kiseki",
@@ -199,7 +199,7 @@
           "status": "Indisponible",
           "inGameDate": "???",
           "availableLanguages": "Aucune",
-          "locationOnMap": { "x": 490, "y": 310 }
+          "locationOnMap": { "x": 479, "y": 320 }
         }
       }
     }
