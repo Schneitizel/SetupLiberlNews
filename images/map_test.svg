@@ -6355,8 +6355,8 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="0.24448704"
-     inkscape:cx="2572.7335"
-     inkscape:cy="1515.4177"
+     inkscape:cx="1791.506"
+     inkscape:cy="1359.9903"
      inkscape:window-width="1920"
      inkscape:window-height="991"
      inkscape:window-x="-9"
@@ -6368,6 +6368,13 @@
      inkscape:label="Image"
      id="g144829"
      transform="translate(57.262749)">
+    <rect
+       style="fill:#576c82;stroke-width:12.9278;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke fill markers"
+       id="rect216771"
+       width="5223.1807"
+       height="2421.3962"
+       x="-875.30188"
+       y="-40.901958" />
     <image
        width="3733.3333"
        height="2325.3333"
@@ -7680,9 +7687,9 @@
            transform="translate(109.41276,-55.217653)"><tspan
              x="772.55511"
              y="1280.887"
-             id="tspan216234"><tspan
+             id="tspan219684"><tspan
                style="font-weight:bold;font-family:'Garamond Premier Pro';-inkscape-font-specification:'Garamond Premier Pro Bold'"
-               id="tspan216232">Érébonia</tspan></tspan></text>
+               id="tspan219682">Érébonia</tspan></tspan></text>
       </g>
     </g>
   </g>

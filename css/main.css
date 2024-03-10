@@ -97,11 +97,11 @@ body {
   width: 100%;
   height: 100%;
   z-index: 1;
-  cursor: grab; /* Set the cursor to a hand when hovering */
+  /* cursor: grab; Set the cursor to a hand when hovering */
 }
 
 #map-svg:active {
-  cursor: grabbing; /* Change the cursor to a grabbing hand when clicked */
+  /* cursor: grabbing; Change the cursor to a grabbing hand when clicked */
 }
 
 .leftMenu {
@@ -776,13 +776,21 @@ i.fa-info:hover {
 	background-size: 100% 100%;
 }
 
-.map_tooltip img {
-    max-width: 80%;
-    height: auto;
-	padding: 25px;
-	margin-bottom: 20px;
+.map_tooltip h2 {
+    margin-bottom: 5px; /* Adjust the value as needed */
 }
 
+.map_tooltip p {
+    margin-top: 5px; /* Adjust the value as needed */
+    margin-bottom: 5px; /* Adjust the value as needed */
+}
+
+.map_tooltip img {
+    max-width: 65%;
+    height: auto;
+    padding: 5px; /* Adjust the value as needed */
+    margin-bottom: 25px; /* Adjust the value as needed */
+}
 .glow {
     border: 2px solid #ffcc00; /* Yellow border as an example */
     box-shadow: 0 0 10px #ffcc00;
