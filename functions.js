@@ -1225,45 +1225,55 @@ function createMap() {
 		updateMarkersOnCurrentZoom(currZoom);
 	}
 
-	function updateMarkersOnCurrentZoom(currZoom){
-		Object.values(markersByLocation).forEach(markerGroup => {
-        // markerGroup is an array of markers with the same location
-        const numMarkers = markerGroup.length;
+	function updateMarkersOnCurrentZoom(currZoom) {
+			Object.values(markersByLocation).forEach(markerGroup => {
+				// markerGroup is an array of markers with the same location
+				const numMarkers = markerGroup.length;
 
-        if (numMarkers > 1) {
-            // Get the current position of the first marker
-            const fixedPositionX = parseFloat(markerGroup[0].getAttribute('cx'));
-            const fixedPositionY = parseFloat(markerGroup[0].getAttribute('cy'));
+				if (numMarkers > 1) {
+					// Get the current position of the first marker
+					const fixedPositionX = parseFloat(markerGroup[0].getAttribute('cx'));
+					const fixedPositionY = parseFloat(markerGroup[0].getAttribute('cy'));
+					
+					for (let i = 1; i < numMarkers; i++) {
+						// Calculate the angle based on the JSON structure or use default angle increment
+						let angle;
+						const gameData =  markerGroup[i].markerDataMap.get("gameData");
 
-            // Calculate the angle between each marker
-            const angleIncrement = (2 * Math.PI) / numMarkers;
+						const angleFromJSON = gameData.angle;
+	
+						if (angleFromJSON !== undefined) {
+							// Use the specified angle from the JSON structure
+							angle = angleFromJSON;
+						} else {
+							// Use the default angle increment
+							const angleIncrement = (2 * Math.PI) / numMarkers;
+							angle = -(i - 1) * angleIncrement;
+						}
 
-            for (let i = 1; i < numMarkers; i++) {
-                // Calculate the new position for each subsequent marker
-                const angle = -(i-1) * angleIncrement ;
-                const radius = 11 / currZoom; // Adjust radius as needed
+						// Calculate the new position for each subsequent marker
+						const radius = 11 / currZoom; // Adjust radius as needed
 
-                const newX = fixedPositionX + 2 * radius * Math.cos(angle);
-                const newY = fixedPositionY + 2 * radius * Math.sin(angle);
+						const newX = fixedPositionX + 2 * radius * Math.cos(angle);
+						const newY = fixedPositionY + 2 * radius * Math.sin(angle);
 
-                // Set the new position for each subsequent marker
-                markerGroup[i].setAttribute('cx', newX);
-                markerGroup[i].setAttribute('cy', newY);
-            }
-        }
+						// Set the new position for each subsequent marker
+						markerGroup[i].setAttribute('cx', newX);
+						markerGroup[i].setAttribute('cy', newY);
+					}
+				}
 
-        // Adjust the size and stroke width for each marker based on the zoom level
-        markerGroup.forEach(marker => {
-            const markerSize = 11; // Adjust size as needed
-            marker.setAttribute('r', markerSize / currZoom);
+				// Adjust the size and stroke width for each marker based on the zoom level
+				markerGroup.forEach(marker => {
+					const markerSize = 11; // Adjust size as needed
+					marker.setAttribute('r', markerSize / currZoom);
 
-            const strokeWidth = 2 / currZoom; // Adjust stroke width as needed
-            marker.setAttribute('stroke-width', strokeWidth);
-        });
-    });
+					const strokeWidth = 2 / currZoom; // Adjust stroke width as needed
+					marker.setAttribute('stroke-width', strokeWidth);
+				});
+			});
+		}
 		
-		
-	}
 	//dans un premier temps on crée le zoom/panning de la carte.
 	var panZoomMap = svgPanZoom('#map-svg', {
         zoomEnabled: true,
