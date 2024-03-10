@@ -124,7 +124,8 @@
           "status": "Indisponible",
           "inGameDate": "Août S1206",
           "availableLanguages": "Japonais, Anglais",
-          "locationOnMap": { "x": 248, "y": 272 }
+          "locationOnMap": { "x": 248, "y": 272 },
+          "angle": 180
         },
         "4": {
           "name": "Trails into Reverie",
