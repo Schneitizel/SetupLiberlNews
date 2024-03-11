@@ -17,7 +17,6 @@ const path = require('path');
 const agent = new https.Agent({
     rejectUnauthorized: false,
 });
-
 const svgpanzoom = require('svg-pan-zoom')
 const {shell} = require('electron');
 const remote = require('@electron/remote');
@@ -226,7 +225,8 @@ function openProject(type = "trails", id = "Sky", game = 0)
 	soit le patch est installé mais pas les voix, mais la case est cocheé => on installe les voix
 	si y a un problème à un quelconque moment l'utilisateur peut cliquer sur un bouton désinstaller qui va enlever voix et patch (table rase). ensuite il pourra cocher la case des voix et installer et ça lui donnera voix et patch*/
     onChangePath();
-
+	updateCurrentState(); // on actualise l'état
+	updateGUI();
 	
     menu.animate({
         opacity: 0
@@ -691,17 +691,25 @@ function isSteamRunning() {
         return false;
     }
 }
-
+function writeRegistryValue() {
+    regedit.putValue({
+      [regKey]: {
+        [regValueName]: {
+          value: regValue,
+          type: 'REG_SZ',
+        },
+      },
+    }, (err) => {
+      if (err) {
+        console.error('Error writing registry value:', err);
+      } else {
+        console.log('Registry value written successfully.');
+      }
+    });
+  }
 // Lancé quand on appuie sur le bouton "Installer/Mise à jour"
 async function downloadFiles() {
-	currentPath = $('.filePath').html();
-	console.log(currentPath);
-	const stats = fs.statSync(currentPath);
-
-    if (!stats.isDirectory()) {
-		openWindow('errorwindow');
-		return;
-    } 
+	
 	updateCurrentState(); // on recheck l'état des fois que ça ait changé en dehors de l'installateur
 	updateGUI();
 	
@@ -722,78 +730,66 @@ async function downloadFiles() {
 	//dans ce cas il devrait appliquer la LaunchOption au fichier sur le cloud au démarrage.
 	//Note 3 : la moindre erreur dans le fichier vdf conduit Steam à supprimer la section problématique (ex : mettre des " à l'intérieur de " pour un string)
 	if (isRunningOnDeck){
+  
 		const steamUserFolder = "Z:\\home\\deck\\.local\\share\\Steam\\userdata"
-		const files = fs.readdirSync(steamUserFolder, { withFileTypes: true });
-		
-		console.log("On regarde là-dedans dans un premier temps :", steamUserFolder);
-		for (const file of files)  {
-			const fullPath = path.join(steamUserFolder, file.name);
+		try{
+			const files = fs.readdirSync(steamUserFolder, { withFileTypes: true });
 			
-			if (file.isDirectory()) {
-				const userID = file.name;
-				console.log("Ca doit correspondre à une UserID :", userID);
-				var giveUp = false;
-				//Note : aucun moyen de communiquer avec proton depuis wine (si j'ai bien compris), enfin entre Linux et le Windows sur lequel tourne l'installateur, du coup je peux pas fermer Steam tout seul, du coup on demande à l'utilisateur
-				await new Promise((resolve) => {
-					openWindow('steamWarning');
+			console.log("On regarde là-dedans dans un premier temps :", steamUserFolder);
+			for (const file of files)  {
+				const fullPath = path.join(steamUserFolder, file.name);
+				
+				if (file.isDirectory()) {
+					const userID = file.name;
+					console.log("Ca doit correspondre à une UserID :", userID);
+					var giveUp = false;
+					//Note : aucun moyen de communiquer avec proton depuis wine (si j'ai bien compris), enfin entre Linux et le Windows sur lequel tourne l'installateur, du coup je peux pas fermer Steam tout seul, du coup on demande à l'utilisateur
+					await new Promise((resolve) => {
+						openWindow('steamWarning');
 
-					document.getElementById('continueButton').addEventListener('click', () => {
-						closeWindow('steamWarning');
-						resolve();
+						document.getElementById('continueButton').addEventListener('click', () => {
+							closeWindow('steamWarning');
+							resolve();
+						});
+
+						document.getElementById('giveUpButton').addEventListener('click', () => {
+							giveUp = true;
+							closeWindow('steamWarning');
+							$('#installPatch').removeClass("disabled");
+							$('#uninstallAll').removeClass("disabled");
+							updateCurrentState(); // on actualise l'état
+							updateGUI();
+							resolve();
+							
+							
+						});
 					});
+					if ((giveUp)) return;
+					
 
-					document.getElementById('giveUpButton').addEventListener('click', () => {
-						giveUp = true;
-						closeWindow('steamWarning');
-						$('#installPatch').removeClass("disabled");
-						$('#uninstallAll').removeClass("disabled");
-						updateCurrentState(); // on actualise l'état
-						updateGUI();
-						resolve();
-						
-						
-					});
-				});
-				if ((giveUp)) return;
-				
-				/*const command = process.platform === 'win32' ? 'taskkill' : 'pkill';
-				const args = process.platform === 'win32' ? ['/F', '/IM', 'steam.exe'] : ['steam'];
-
-				const steamProcess = spawn(command, args);
-
-				steamProcess.on('close', (code) => {
-				  if (code === 0) {
-					console.log('Steam has been closed successfully.');
-					// Proceed with your code after Steam is closed.
-				  } else {
-					console.error(`Failed to close Steam. Exit code: ${code}`);
-				  }
-				});
-
-				steamProcess.on('error', (err) => {
-				  console.error(`Error while trying to close Steam: ${err.message}`);
-				});
-				*/
-
-				const vdfFilePath = steamUserFolder + directorySeparator + userID + directorySeparator + "config" + directorySeparator + "localconfig.vdf";
-				
-				const vdfContent = fs.readFileSync(vdfFilePath, 'utf8');
-				// Parse the .vdf content
-				const parsedData = VDF.parse(vdfContent);
-				
-				parsedData.get('UserLocalConfigStore')
-				.get('Software')
-				.get('Valve')
-				.get('Steam')
-				.get('apps')
-				.get(String(gameLoaded['steamId']))
-				.set('LaunchOptions', "WINEDLLOVERRIDES=\\\"dinput8=n,b\\\" %command%");
-				// Serialize the modified data back to .vdf format
-				const updatedVDFContent = VDF.stringify(parsedData, true);
-				//
-				//// Write the updated content back to the .vdf file
-				fs.writeFileSync(vdfFilePath, updatedVDFContent, 'utf8');
+					const vdfFilePath = steamUserFolder + directorySeparator + userID + directorySeparator + "config" + directorySeparator + "localconfig.vdf";
+					
+					const vdfContent = fs.readFileSync(vdfFilePath, 'utf8');
+					// Parse the .vdf content
+					const parsedData = VDF.parse(vdfContent);
+					
+					parsedData.get('UserLocalConfigStore')
+					.get('Software')
+					.get('Valve')
+					.get('Steam')
+					.get('apps')
+					.get(String(gameLoaded['steamId']))
+					.set('LaunchOptions', "WINEDLLOVERRIDES=\\\"dinput8=n,b\\\" %command%");
+					// Serialize the modified data back to .vdf format
+					const updatedVDFContent = VDF.stringify(parsedData, true);
+					//
+					//// Write the updated content back to the .vdf file
+					fs.writeFileSync(vdfFilePath, updatedVDFContent, 'utf8');
+				}
 			}
+		}
+		catch(err){
+			console.log(err);
 		}
 	}
 	
@@ -875,9 +871,7 @@ async function fct(pathAbs, outputFolder, gaugeObject){
             zipfile.readEntry();
           } else {
 			var parent_folder = targetFile.substring(0, targetFile.lastIndexOf(directorySeparator));
-			console.log("creating "+ targetFile)
 			if (!fs.existsSync(parent_folder)) {
-				console.log("creating "+ parent_folder)
 				fs.mkdirSync(parent_folder, { recursive: true });
             }
             zipfile.openReadStream(entry, (err, readStream) => {
@@ -993,6 +987,8 @@ function getGivenGame(game) {
         const pathsToCheck = [
           "C:\\Program Files\\",
           "C:\\Program Files (x86)\\",
+		  "D:\\Program Files\\",
+		  "D:\\Program Files (x86)\\"
         ];
 
         for (const path of pathsToCheck) {
@@ -1045,7 +1041,7 @@ function getGivenGame(game) {
 		}
   }
   
-  return "Jeu non détecté. Cliquez ici pour le spécifier."; // Return null if no suitable path is found
+  return "Jeu non détecté. Cliquez ici pour spécifier son emplacement."; // Return null if no suitable path is found
 }
 
 
@@ -1102,7 +1098,7 @@ function changeImageByPath(imagePath) {
 
 //demandé par Aisoce : toutes les popup qui sont juste informatives, on doit pouvoir les fermer en cliquant dans le vide
 window.onclick = function(event) {
-  var modalIds = ["popupContainer","HelpWindow", "InfoWindow"];
+  var modalIds = ["popupContainer","HelpWindow", "InfoWindow","errorwindow"];
 
   for (var i = 0; i < modalIds.length; i++) {
     var modal = document.getElementById(modalIds[i]);
@@ -1127,8 +1123,7 @@ function onChangePath() {
 				$('.filePath').addClass("noPath").html(installationPath);;
 				return;
 			} 
-			updateCurrentState(); // on actualise l'état
-			updateGUI();
+			
 			$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
 			return;
 		}
@@ -1148,6 +1143,20 @@ function onChangeCheckbox() {
 }
 
 function playButton() {
+	currentPath = $('.filePath').html();
+	console.log(currentPath);
+	try{
+		const stats = fs.statSync(currentPath);
+		if (!stats.isDirectory()) {
+			openWindow('errorwindow');
+			return;
+		} 
+	}
+    catch (error) {
+		openWindow('errorwindow');
+		return;
+	}
+	
 	if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)){
 		const gamePath = $('.filePath').html() + directorySeparator + gameLoaded["exe_name"];
 
@@ -1225,9 +1234,9 @@ function createMap() {
 			marker.markerDataMap = markerDataMap;
 
 			updateMarkerColor(marker);
-
-			marker.setAttribute("cx", gameValue.locationOnMap.x.toString()); // Use position from JSON
-			marker.setAttribute("cy", gameValue.locationOnMap.y.toString());
+			
+			marker.setAttribute("cx", `${gameValue.locationOnMap.x}%`);
+			marker.setAttribute("cy", `${gameValue.locationOnMap.y}%`);
 
 			marker.addEventListener('mouseenter', handleMarkerEnter);
 			marker.addEventListener('mouseleave', handleMarkerLeave);
@@ -1265,53 +1274,62 @@ function createMap() {
 	}
 
 	function updateMarkersOnCurrentZoom(currZoom) {
-			Object.values(markersByLocation).forEach(markerGroup => {
-				// markerGroup is an array of markers with the same location
-				const numMarkers = markerGroup.length;
+		
+		const svgContainer = document.getElementById('map-svg');
 
-				if (numMarkers > 1) {
-					// Get the current position of the first marker
-					const fixedPositionX = parseFloat(markerGroup[0].getAttribute('cx'));
-					const fixedPositionY = parseFloat(markerGroup[0].getAttribute('cy'));
-					
-					for (let i = 1; i < numMarkers; i++) {
-						// Calculate the angle based on the JSON structure or use default angle increment
-						let angle;
-						const gameData =  markerGroup[i].markerDataMap.get("gameData");
-
-						const angleFromJSON = gameData.angle;
+		// Obtain the width and height of the SVG container
+		const svgWidth = svgContainer.clientWidth;
+		const svgHeight = svgContainer.clientHeight;
 	
-						if (angleFromJSON !== undefined) {
-							// Use the specified angle from the JSON structure
-							angle = angleFromJSON;
-						} else {
-							// Use the default angle increment
-							const angleIncrement = (2 * Math.PI) / numMarkers;
-							angle = -(i - 1) * angleIncrement;
-						}
-
-						// Calculate the new position for each subsequent marker
-						const radius = 11 / currZoom; // Adjust radius as needed
-
-						const newX = fixedPositionX + 2 * radius * Math.cos(angle);
-						const newY = fixedPositionY + 2 * radius * Math.sin(angle);
-
-						// Set the new position for each subsequent marker
-						markerGroup[i].setAttribute('cx', newX);
-						markerGroup[i].setAttribute('cy', newY);
+	
+		Object.values(markersByLocation).forEach(markerGroup => {
+			// markerGroup is an array of markers with the same location
+			const numMarkers = markerGroup.length;
+	
+			if (numMarkers > 1) {
+			// Get the current position of the first marker
+				const fixedPositionX = svgWidth * parseFloat(markerGroup[0].getAttribute('cx'))/100;
+				const fixedPositionY = svgHeight * parseFloat(markerGroup[0].getAttribute('cy'))/100 ;
+				
+				for (let i = 1; i < numMarkers; i++) {
+					// Calculate the angle based on the JSON structure or use default angle increment
+					let angle;
+					const gameData = markerGroup[i].markerDataMap.get("gameData");
+					const angleFromJSON = gameData.angle;
+			
+					if (angleFromJSON !== undefined) {
+						// Use the specified angle from the JSON structure
+						angle = angleFromJSON;
+					} else {
+						// Use the default angle increment
+						const angleIncrement = (2 * Math.PI) / numMarkers;
+						angle = -(i - 1) * angleIncrement;
 					}
+			
+					// Apply angle calculations to absolute coordinates
+					const radius = 11 / currZoom; // Adjust radius as needed
+					const newX = 2 * radius * Math.cos(angle);
+					const newY = 2 * radius * Math.sin(angle);
+			
+					// Convert back to percentage coordinates and set the new position for each subsequent marker
+					const newXPercentage = ((fixedPositionX + newX) / svgWidth) * 100;
+					const newYPercentage = ((fixedPositionY + newY) / svgHeight) * 100;
+			
+					markerGroup[i].setAttribute('cx', `${newXPercentage}%`);
+					markerGroup[i].setAttribute('cy', `${newYPercentage}%`);
 				}
+			}
 
-				// Adjust the size and stroke width for each marker based on the zoom level
-				markerGroup.forEach(marker => {
-					const markerSize = 11; // Adjust size as needed
-					marker.setAttribute('r', markerSize / currZoom);
+			// Adjust the size and stroke width for each marker based on the zoom level
+			markerGroup.forEach(marker => {
+				const markerSize = 11; // Adjust size as needed
+				marker.setAttribute('r', markerSize / currZoom);
 
-					const strokeWidth = 2 / currZoom; // Adjust stroke width as needed
-					marker.setAttribute('stroke-width', strokeWidth);
-				});
+				const strokeWidth = 2 / currZoom; // Adjust stroke width as needed
+				marker.setAttribute('stroke-width', strokeWidth);
 			});
-		}
+		});
+	}
 		
 	//dans un premier temps on crée le zoom/panning de la carte.
 	var panZoomMap = svgPanZoom('#map-svg', {
