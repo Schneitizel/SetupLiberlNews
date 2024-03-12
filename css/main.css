@@ -179,7 +179,9 @@ img.logo {
     text-align: center;
     position: relative;
 }
-
+.displayGame {
+    z-index: 1;
+}
 .displayGame i.fa-house, .displayGame i.fa-user-group, .gameCredits i.fa-download {
     position: absolute;
     padding: 10px;
@@ -220,7 +222,7 @@ img.logo {
     cursor: auto;
 }
 
-.game img {
+.game .game-icon {
     border: 1px solid black;
     border-radius: 5px;
     width: 15%;
@@ -231,7 +233,7 @@ img.logo {
     cursor: pointer;
 }
 
-.game img:hover {
+.game .game-icon:hover {
     opacity: 1;
 }
 
@@ -800,4 +802,19 @@ i.fa-info:hover {
 #InfoWindow .top-left img {
     cursor: pointer;
     margin-bottom: 10px; /* Adjust the value as needed */
+}
+
+.map-icon {
+    border: none;
+    padding: 0;
+    border-radius: 5px;
+    width: 15%;
+    margin-right: 0;
+    margin-left: 20px;
+    opacity: 1;
+    transition: transform 0.3s;
+    cursor: pointer;
+}
+.map-icon:hover {
+    transform: scale(1.2);
 }

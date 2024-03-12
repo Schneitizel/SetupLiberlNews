@@ -26,7 +26,7 @@ const dialog = remote.dialog;
 var currentState;
 var config;
 var projectsList;
-
+var currentTrailsMode = "classic";
 var numberPicture = 1; // Le numéro de l'image du projet affiché
 
 var gameLoaded; // Défini quel projet est chargé actuellement
@@ -107,11 +107,8 @@ async function loadElements()
     $('.footer').html(config["footerText"]); // On affiche le message du footer
 	
 	//Par défaut, toujours afficher le mode Trails, mais on charge les jeux rétros pour se préparer au cas où l'utilisateur change de mode
-	if (!isRunningOnDeck)
-		createMap();
-	else{
-		createClassicMenu("trails"); 
-	}
+	
+	createClassicMenu("trails"); 
 	createClassicMenu("retro"); 
 	
     writeConfig();
@@ -177,9 +174,18 @@ function openProject(type = "trails", id = "Sky", game = 0)
 {
 	
     menu = $('.Trails'); // On vérifie quel menu doit disparaître ; et grâce à ça, on sait aussi lequel doit ré-apparaître !
-    if(!$('#modeTrails').hasClass('active'))
+	if ($('#modeTrails').hasClass('active')){
+		if (currentTrailsMode == "map"){
+			$('.map-tooltip').css('display', 'none');
+			menu = $('#map-svg');
+			
+		}
+		$('#trailsModeButton').css('display', 'none');
+	}
+    else
         menu = $('.Retro');
-	$('#map-svg').css('display', 'none');
+	
+	
     $('.gameInfos').css('display', 'inline-block');
     $('.gameCredits').css('display', 'none');
 	
@@ -233,11 +239,16 @@ function openProject(type = "trails", id = "Sky", game = 0)
     }, config["speedAnimation"]);
 
     setTimeout(function(){
-        menu.css('display', 'none');
-        $('.displayGame').css('display', 'block');
-        $('.displayGame').animate({
-            opacity: 1
-        }, config["speedAnimation"]);
+        $('.displayGame').css('display', 'block').animate({
+        opacity: 1
+    }, {
+        duration: config["speedAnimation"],
+        complete: function() {
+            // Callback function executed after the animation is complete
+            // Hide the menu
+            menu.css('display', 'none');
+        }
+    });
     }, config["speedAnimation"]);
 	
 }
@@ -256,8 +267,17 @@ function goHome()
             opacity: 1
         }, config["speedAnimation"]);
     }, config["speedAnimation"]);
-	if (!isRunningOnDeck)
+	
+	$('#trailsModeButton').css('display', 'block');
+	if ((currentTrailsMode == "map") && ($('#modeTrails').hasClass('active'))) // Si le mode "Trails" est actif
+    {
 		$('#map-svg').css('display', 'block');
+		
+	}
+	//else
+	//{
+	//	$('#map-svg').css('display', 'block');
+	//}
 }
 
 // Change l'image affichée ; mettre un nombre négatif pour afficher l'image précédente
@@ -1467,9 +1487,7 @@ function getColorForStatus(status) {
 	function handleMarkerLeave(event) {
 		const marker = event.target;
 		marker.setAttribute("stroke", "black");
-		//tooltip.style.display = 'none';
-		tooltip.style.left = `-9999px`;
-        tooltip.style.top = `-9999px`;
+		tooltip.style.display = 'none';
 	}
 
 	function handleMarkerClick(event) {
@@ -1630,14 +1648,25 @@ function createClassicMenu(games_id){ //games = retro ou trails
 				let imageURL = "https://cdn.akamai.steamstatic.com/steam/apps/" + valueGame['steamId'] + "/header.jpg";
 				if(valueGame['steamId'] == -1) // Si le jeu est un jeu nom Steam, honte à vous ! Et on va chercher son image dans le dossier "images"
 					imageURL = "images/" + valueGame['name'] + ".png";
-				games = games + '<img onclick="openProject(\''+games_id+'\', \'' + key + '\', \'' + keyGame + '\')" src="' + imageURL + '">';
+				games = games + '<img class="game-icon" onclick="openProject(\''+games_id+'\', \'' + key + '\', \'' + keyGame + '\')" src="' + imageURL + '">';
 				if(dataUser['projects'][valueGame["name"]] === undefined) // Si le projet n'existe pas dans les infos utilisateurs, on le créé
 					dataUser['projects'][valueGame["name"]] = {"patch": null, "voice": null};
 			}
 		});
 		if(games !== "") // Si pas de patch disponible, on affiche pas !
-			GamesElement.innerHTML = GamesElement.innerHTML + '<h1> <img src="images/' + value['icon'] + '.png">' + value['title'] + '</h1>' + games;
+		{
+			GamesElement.innerHTML = GamesElement.innerHTML + '<h1> <img src="images/' + value['icon'] + '.png">' + value['title'] + '</h1>' + games;			
+			if (games_id == "trails"){
+				//Pour les trails on ajoute aussi le mode map comme option d'affichage
+				Element.setAttribute("id", "trails-menu");
+				const buttonTrails = document.createElement("div");
+				buttonTrails.innerHTML = '<img src="images/map_icon.png" id="trailsModeButton" onclick="switchTrailsMode(\'map\')" class="map-icon" style="position: absolute; top: 0; right: 25px; width: auto; height: 50px; border: none;">';
+				mainMenuElement.appendChild(buttonTrails);
+				
+			}
+		}
 	});
+	
 	Element.appendChild(GamesElement);
 	const firstChild = mainMenuElement.firstChild;
 	mainMenuElement.insertBefore(Element, firstChild);
@@ -1665,3 +1694,35 @@ function selectFolder(){
 	}
 	onChangePath();
   }
+  
+function switchTrailsMode(mode){
+	const modeButton = document.getElementById("trailsModeButton");
+	const menu = document.getElementById("trails-menu");
+	let map = document.getElementById("map-svg");
+
+	
+	if (mode == "map"){
+		if (map == undefined){
+			createMap();
+			map = document.getElementById("map-svg");
+		}
+		map.style.display = "block";
+		menu.style.display = "none";
+		modeButton.src = "images/menu_icon.png";
+		modeButton.onclick = function() {
+				switchTrailsMode("menu");
+			};
+		currentTrailsMode = "map";
+	}
+	else{
+		map.style.display = "none";
+		menu.style.display = "block";
+		modeButton.src = "images/map_icon.png";
+		modeButton.onclick = function() {
+				switchTrailsMode("map");
+		};
+		currentTrailsMode = "classic";
+	}
+	
+	
+}
