@@ -992,34 +992,43 @@ function getRegistryValue(regKey, data) {
 // Crédits : Ashley A. Sekai (C.R.X.)
 function getGivenGame(game) {
   let i = 0;
+  const list = [];
+  
   if (!isRunningOnDeck) {
-    const steamRegistryKey = `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${game['steamId']}`;
-    const installationPath = getRegistryValue(steamRegistryKey, 'InstallLocation');
-    if (installationPath !== null) {
-      return installationPath;
-    } else {
-      const gogRegistryKey = `HKEY_LOCAL_MACHINE\\SOFTWARE\\GOG.com\\Games\\${game['GOGId']}`;
-      const gogInstallationPath = getRegistryValue(gogRegistryKey, 'path');
+    //const steamRegistryKey = `HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App ${game['steamId']}`;
+	const steamRegistryKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Valve\\Steam"
+    //const installationPath = getRegistryValue(steamRegistryKey, 'InstallLocation');
+	const steamPath = getRegistryValue(steamRegistryKey, 'InstallPath'); //Un truc style C:\Program Files (x86)\Steam
+	if (steamPath !== null){
+		const libraryvdf = steamPath + directorySeparator + "steamapps" + directorySeparator + "libraryfolders.vdf";
+		const vdfContent = fs.readFileSync(libraryvdf, 'utf8');
+			const parsedData = VDF.parse(vdfContent);
+			
+			const pathx = parsedData.get('libraryfolders')
+			
+			let i = 0;
+			for (const [outerKey, outerValue] of pathx) {
+				var p = outerValue.get('path');
+				
+				if (outerValue instanceof Map) {
+					list[i] = p + directorySeparator + 'steamapps' + directorySeparator + 'common' + directorySeparator + game['steamFolderName'];
+				} 
+				i++;
+			}
+	}
+	if (list.length == 0){
+		const gogRegistryKey = `HKEY_LOCAL_MACHINE\\SOFTWARE\\GOG.com\\Games\\${game['GOGId']}`;
+		const gogInstallationPath = getRegistryValue(gogRegistryKey, 'path');
 
-      if (gogInstallationPath !== null) {
-        return gogInstallationPath;
-      } else {
-        const pathsToCheck = [
-          "C:\\Program Files\\",
-          "C:\\Program Files (x86)\\",
-		  "D:\\Program Files\\",
-		  "D:\\Program Files (x86)\\"
-        ];
-
-        for (const path of pathsToCheck) {
-          if (fs.existsSync(path + game['steamFolderName'])) {
-            return path + game['steamFolderName'];
-          }
-        }
-      }
-    }
+		if (gogInstallationPath !== null) {
+			list.push(gogInstallationPath)
+		} else {
+			list.push("C:\\Program Files\\" + game['steamFolderName']);
+			list.push("C:\\Program Files (x86)\\" + game['steamFolderName']);
+		}
+	}
   } else {
-		const list = [];
+		
 		const vdfFilePath = 'Z:\\home\\deck\\.local\\share\\Steam\\steamapps\\libraryfolders.vdf';
 		//const vdfFilePath = "C:\\Program Files (x86)\\Steam\\steamapps\\libraryfolders.vdf";
 		
@@ -1034,8 +1043,7 @@ function getGivenGame(game) {
 			const parsedData = VDF.parse(vdfContent);
 			
 			const pathx = parsedData.get('libraryfolders')
-			console.log("vdf existe : ", fs.existsSync(vdfFilePath));
-			console.log(pathx);
+			
 			let i = 0;
 			for (const [outerKey, outerValue] of pathx) {
 				console.log(`Outer key: ${outerKey}`);
@@ -1051,16 +1059,16 @@ function getGivenGame(game) {
 			
 			
 		}
-		for (const path of list) {
-
-			var fullpath = path;
-			console.log("On teste " + fullpath);
-			if (fs.existsSync(fullpath)) {
-				return fullpath;
-		  }
-		}
+		
   }
-  
+  for (const path of list) {
+
+		var fullpath = path;
+		console.log("On teste " + fullpath);
+		if (fs.existsSync(fullpath)) {
+			return fullpath;
+	  }
+	}
   return "Jeu non détecté. Cliquez ici pour spécifier son emplacement."; // Return null if no suitable path is found
 }
 
