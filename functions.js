@@ -100,7 +100,7 @@ $(document).ready(async function(){
 
 async function loadElements()
 {
-	isRunningOnDeck = areWeOnDeck();
+	isRunningOnDeck = !areWeOnDeck();
     let version = require('./package.json');
     $('.setupVersion').html('Version de l\'installateur : ' + version['version']);
 	//$('.setupVersion').html('Version de l\'installateur : ' + os.homedir() + " " + process.platform);
@@ -751,65 +751,70 @@ async function downloadFiles() {
 	//Note 3 : la moindre erreur dans le fichier vdf conduit Steam à supprimer la section problématique (ex : mettre des " à l'intérieur de " pour un string)
 	if (isRunningOnDeck){
   
-		const steamUserFolder = "Z:\\home\\deck\\.local\\share\\Steam\\userdata"
-		try{
-			const files = fs.readdirSync(steamUserFolder, { withFileTypes: true });
-			
-			console.log("On regarde là-dedans dans un premier temps :", steamUserFolder);
-			for (const file of files)  {
-				const fullPath = path.join(steamUserFolder, file.name);
+		const fs = require('fs');
+
+		var nextStepRequired = SDeckUpdateRegistry();
+		
+		if (nextStepRequired){
+			const steamUserFolder = "Z:\\home\\deck\\.local\\share\\Steam\\userdata"
+			try{
+				const files = fs.readdirSync(steamUserFolder, { withFileTypes: true });
 				
-				if (file.isDirectory()) {
-					const userID = file.name;
-					console.log("Ca doit correspondre à une UserID :", userID);
-					var giveUp = false;
-					//Note : aucun moyen de communiquer avec proton depuis wine (si j'ai bien compris), enfin entre Linux et le Windows sur lequel tourne l'installateur, du coup je peux pas fermer Steam tout seul, du coup on demande à l'utilisateur
-					await new Promise((resolve) => {
-						openWindow('steamWarning');
+				console.log("On regarde là-dedans dans un premier temps :", steamUserFolder);
+				for (const file of files)  {
+					const fullPath = path.join(steamUserFolder, file.name);
+					
+					if (file.isDirectory()) {
+						const userID = file.name;
+						var giveUp = false;
+						//Note : aucun moyen de communiquer avec proton depuis wine (si j'ai bien compris), enfin entre Linux et le Windows sur lequel tourne l'installateur, du coup je peux pas fermer Steam tout seul, du coup on demande à l'utilisateur
+						await new Promise((resolve) => {
+							openWindow('steamWarning');
 
-						document.getElementById('continueButton').addEventListener('click', () => {
-							closeWindow('steamWarning');
-							resolve();
+							document.getElementById('continueButton').addEventListener('click', () => {
+								closeWindow('steamWarning');
+								resolve();
+							});
+
+							document.getElementById('giveUpButton').addEventListener('click', () => {
+								giveUp = true;
+								closeWindow('steamWarning');
+								$('#installPatch').removeClass("disabled");
+								$('#uninstallAll').removeClass("disabled");
+								updateCurrentState(); // on actualise l'état
+								updateGUI();
+								resolve();
+								
+								
+							});
 						});
+						if ((giveUp)) return;
+						
 
-						document.getElementById('giveUpButton').addEventListener('click', () => {
-							giveUp = true;
-							closeWindow('steamWarning');
-							$('#installPatch').removeClass("disabled");
-							$('#uninstallAll').removeClass("disabled");
-							updateCurrentState(); // on actualise l'état
-							updateGUI();
-							resolve();
-							
-							
-						});
-					});
-					if ((giveUp)) return;
-					
-
-					const vdfFilePath = steamUserFolder + directorySeparator + userID + directorySeparator + "config" + directorySeparator + "localconfig.vdf";
-					
-					const vdfContent = fs.readFileSync(vdfFilePath, 'utf8');
-					// Parse the .vdf content
-					const parsedData = VDF.parse(vdfContent);
-					
-					parsedData.get('UserLocalConfigStore')
-					.get('Software')
-					.get('Valve')
-					.get('Steam')
-					.get('apps')
-					.get(String(gameLoaded['steamId']))
-					.set('LaunchOptions', "WINEDLLOVERRIDES=\\\"dinput8=n,b\\\" %command%");
-					// Serialize the modified data back to .vdf format
-					const updatedVDFContent = VDF.stringify(parsedData, true);
-					//
-					//// Write the updated content back to the .vdf file
-					fs.writeFileSync(vdfFilePath, updatedVDFContent, 'utf8');
+						const vdfFilePath = steamUserFolder + directorySeparator + userID + directorySeparator + "config" + directorySeparator + "localconfig.vdf";
+						
+						const vdfContent = fs.readFileSync(vdfFilePath, 'utf8');
+						// Parse the .vdf content
+						const parsedData = VDF.parse(vdfContent);
+						
+						parsedData.get('UserLocalConfigStore')
+						.get('Software')
+						.get('Valve')
+						.get('Steam')
+						.get('apps')
+						.get(String(gameLoaded['steamId']))
+						.set('LaunchOptions', "WINEDLLOVERRIDES=\\\"dinput8=n,b\\\" %command%");
+						// Serialize the modified data back to .vdf format
+						const updatedVDFContent = VDF.stringify(parsedData, true);
+						//
+						//// Write the updated content back to the .vdf file
+						fs.writeFileSync(vdfFilePath, updatedVDFContent, 'utf8');
+					}
 				}
 			}
-		}
-		catch(err){
-			console.log(err);
+			catch(err){
+				console.log(err); //si même cette étape foire, je peux plus rien pour vous
+			}
 		}
 	}
 	
@@ -1733,4 +1738,40 @@ function switchTrailsMode(mode){
 	}
 	
 	
+}
+
+function SDeckUpdateRegistry(){
+	var nextStepRequired = true;
+	try {
+	  const filePath = "C:\\Users\\Administrator\\Desktop\\user.reg";
+	  const targetKey = '[Software\\\\Wine\\\\DllOverrides]';
+	  const newLineToAdd = '"dinput8"="native,builtin"';
+
+	  const data = fs.readFileSync(filePath, 'utf8');
+
+	  if (data.includes(targetKey)) {
+		const startIndex = data.indexOf(targetKey);
+		const nextKeyIndex = data.indexOf('[', startIndex + 1); 
+		const endIndex = nextKeyIndex !== -1 ? nextKeyIndex : data.length;
+
+		const targetBlockContent = data.slice(startIndex, endIndex);
+
+		if (!targetBlockContent.includes('"dinput8"')) {
+		  const modifiedBlockContent = `${targetBlockContent.trimRight()}\n${newLineToAdd}\n\n`;
+		  const modifiedData = data.replace(targetBlockContent, modifiedBlockContent);
+		  fs.writeFileSync(filePath, modifiedData, 'utf8');
+		  nextStepRequired = false;
+		} else {
+		  nextStepRequired = true;
+		}
+	  } else {
+		const newBlock = `${targetKey} 1696584635\n${newLineToAdd}\n\n`; 
+
+		fs.appendFileSync(filePath, newBlock, 'utf8');
+		nextStepRequired = false;
+	  }
+	} catch (err) {
+	  nextStepRequired = false;
+	}
+	return nextStepRequired;
 }
