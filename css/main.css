@@ -311,6 +311,7 @@ img.logo {
 .gameCredits {
     display: none;
     overflow-y: scroll;
+	text-align: center;
 }
 
 #gameDesc {

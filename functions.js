@@ -176,7 +176,7 @@ function openProject(type = "trails", id = "Sky", game = 0)
     menu = $('.Trails'); // On vérifie quel menu doit disparaître ; et grâce à ça, on sait aussi lequel doit ré-apparaître !
 	if ($('#modeTrails').hasClass('active')){
 		if (currentTrailsMode == "map"){
-			$('.map-tooltip').css('display', 'none');
+			
 			menu = $('#map-svg');
 			
 		}
@@ -247,6 +247,7 @@ function openProject(type = "trails", id = "Sky", game = 0)
             // Callback function executed after the animation is complete
             // Hide the menu
             menu.css('display', 'none');
+			$('.map-tooltip').css('display', 'none');
         }
     });
     }, config["speedAnimation"]);
@@ -1405,52 +1406,26 @@ function handleMarkerEnter(event) {
 
     const mouseX = event.clientX;
     const mouseY = event.clientY;
-
-    // Create an image element
-    const imageElement = new Image();
-
-    // Set up a counter to keep track of loaded elements
-    let loadedElements = 0;
-
+    
+	tooltip.innerHTML = `
+         <h2 title="${name}">${name}</h2>
+         <p style="text-align: left; font-size: 1.2em; margin-left: 15%;">
+             <u>Date (Calendrier septien)</u> : ${inGameDate}<br>
+             <u>Statut du patch</u> : <span style="color: ${getColorForStatus(status)};">${status}</span><br>
+             <u>Langues</u> : ${availableLanguages}
+         </p>
+         <img src="${imageURL}" id="tooltip_image" alt="Image"/>
+     `;
+			
+	const tooltip_img = document.getElementById('tooltip_image');
     // Add a load event listener for the image
-    imageElement.addEventListener('load', function () {
-        loadedElements++;
-
-        // Check if both the text and the image are loaded
-        if (loadedElements === 2) {
-            // Update the tooltip content
-            tooltip.innerHTML = `
-                <h2 title="${name}">${name}</h2>
-                <p style="text-align: left; font-size: 1.2em; margin-left: 15%;">
-                    <u>Date (Calendrier septien)</u> : ${inGameDate}<br>
-                    <u>Statut du patch</u> : <span style="color: ${getColorForStatus(status)};">${status}</span><br>
-                    <u>Langues</u> : ${availableLanguages}
-                </p>
-                <img src="${imageURL}" alt="Image"/>
-            `;
-
-            // Display the tooltip
+    tooltip_img.addEventListener('load', function () {
+        
             tooltip.style.display = 'block';
-
-            // Position the tooltip after the image is fully loaded
             positionTooltip(tooltip, marker);
-        }
+       
     });
 
-    // Add a load event listener for the tooltip image
-    imageElement.src = imageURL;
-
-    // Hide the tooltip initially
-    tooltip.style.display = 'none';
-
-    // Increment the loadedElements counter for the text
-    loadedElements++;
-
-    // Display the tooltip after the text is loaded
-    if (loadedElements === 2) {
-        positionTooltip(tooltip, marker);
-        tooltip.style.display = 'block';
-    }
 }
 
 function updateMarkerColor(marker){
