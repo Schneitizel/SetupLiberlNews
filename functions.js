@@ -100,7 +100,7 @@ $(document).ready(async function(){
 
 async function loadElements()
 {
-	isRunningOnDeck = !areWeOnDeck();
+	isRunningOnDeck = areWeOnDeck();
     let version = require('./package.json');
     $('.setupVersion').html('Version de l\'installateur : ' + version['version']);
 	//$('.setupVersion').html('Version de l\'installateur : ' + os.homedir() + " " + process.platform);
@@ -1743,7 +1743,8 @@ function switchTrailsMode(mode){
 function SDeckUpdateRegistry(){
 	var nextStepRequired = true;
 	try {
-	  const filePath = "C:\\Users\\Administrator\\Desktop\\user.reg";
+	  //const filePath = "C:\\Users\\Administrator\\Desktop\\user.reg";
+	  const filePath = "Z:\\home\\deck\\.local\\share\\Steam\\steamapps\\compatdata\\"+gameLoaded["steamId"]+"\\pfx\\user.reg";
 	  const targetKey = '[Software\\\\Wine\\\\DllOverrides]';
 	  const newLineToAdd = '"dinput8"="native,builtin"';
 
