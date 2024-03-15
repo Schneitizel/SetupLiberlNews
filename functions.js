@@ -492,7 +492,6 @@ function updateGUI(){
 function updateCurrentState(){
 	
 	const vp = isVoicePatchInstalled();
-	
 	let releaseDate = "";
 	
 	let userVersion = "Aucune"
@@ -1162,21 +1161,18 @@ function onChangePath() {
 		
 			if (!stats.isDirectory()) {
 				$('.filePath').addClass("noPath").html(installationPath);;
-				return;
 			} 
 			
 			$('.filePath').removeClass("noPath").addClass("okPath").html(installationPath);
-			return;
 		}
 		else{
 			$('.filePath').addClass("noPath").html(installationPath);;
-			return;
 		}
 	} catch (error) {
 		$('.filePath').addClass("noPath").html(installationPath);;
-			return;
 		}
-	
+	updateCurrentState(); // on actualise l'état
+	updateGUI();
 }
 function onChangeCheckbox() {
     updateCurrentState(); // on actualise l'état

@@ -819,6 +819,7 @@ i.fa-info:hover {
     opacity: 1;
     transition: transform 0.3s;
     cursor: pointer;
+	box-shadow: 0 0 10px 0px #000000ee;
 }
 .map-icon:hover {
     transform: scale(1.2);
