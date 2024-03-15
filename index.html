@@ -23,7 +23,7 @@
 						NOM DU JEU
 					</h1>
 					<div class="gamePictures">
-						<div class="displayPicture">
+						<div class="displayPicture" onclick="showCurrentPicture()">
 						<img id="gamePicture" src="">
 							<i onclick="changeImage(-1)" class="fa-solid fa-arrow-left"></i>
 							<i onclick="changeImage(1)" class="fa-solid fa-arrow-right"></i>
@@ -156,4 +156,10 @@
 				</div>
 			</div>
 			
+		</div>
+		<div id="gamePictureModal" class="modalpicture">
+			
+			<img class="modal-content" id="modalImage" onclick="closeWindow('gamePictureModal')">
+				
+			</img>
 		</div>

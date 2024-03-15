@@ -277,6 +277,7 @@ function goHome()
 // Change l'image affichée ; mettre un nombre négatif pour afficher l'image précédente
 function changeImage(num = 1)
 {
+	event.stopPropagation();
     numberPicture += num
 
     if(numberPicture <= 0)
@@ -630,7 +631,7 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 }
 
 // Lancé quand on appuie sur le bouton "Désinstaller"
-function uninstall() {
+async function uninstall() {
 	var result = true;
     if($('#uninstallAll').hasClass('disabled'))
         return;
@@ -1138,7 +1139,7 @@ function changeImageByPath(imagePath) {
 
 //demandé par Aisoce : toutes les popup qui sont juste informatives, on doit pouvoir les fermer en cliquant dans le vide
 window.onclick = function(event) {
-  var modalIds = ["popupContainer","HelpWindow", "InfoWindow","errorwindow"];
+  var modalIds = ["popupContainer","HelpWindow", "InfoWindow","errorwindow","gamePictureModal"];
 
   for (var i = 0; i < modalIds.length; i++) {
     var modal = document.getElementById(modalIds[i]);
@@ -1756,4 +1757,11 @@ function SDeckUpdateRegistry(){
 	  nextStepRequired = false;
 	}
 	return nextStepRequired;
+}
+
+function showCurrentPicture() {
+    var currentPictureSrc = document.getElementById('gamePicture').src;
+    var modalImg = document.getElementById("modalImage");
+    modalImg.src = currentPictureSrc;
+    document.getElementById("gamePictureModal").style.display = "block";
 }
