@@ -23,6 +23,7 @@ const remote = require('@electron/remote');
 const dialog = remote.dialog;
 
 // Variables globales
+var busy = false;
 var currentState;
 var config;
 var projectsList;
@@ -205,11 +206,6 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('#gamePicture').attr("src", "images/projets/" + id + game + "1.png"); // On affiche la première image du projet, et on réinitialise son affichage
     numberPicture = 1;
 
-    // On réinitialise le bouton de téléchargement, au cas où
-    $('#installPatch').removeClass("disabled");
-    $('#installPatch').html("Installer");
-
-	$('#uninstallAll').removeClass("disabled");
 	
     $('#checkVoice').css("display", "block");
     $('#projectBar').css("background", "linear-gradient(to right, #3DB9F5 0%, #3df5c2 0%, #3DB9F500 0%)");
@@ -275,10 +271,7 @@ function goHome()
 		$('#map-svg').css('display', 'block');
 		
 	}
-	//else
-	//{
-	//	$('#map-svg').css('display', 'block');
-	//}
+	
 }
 
 // Change l'image affichée ; mettre un nombre négatif pour afficher l'image précédente
@@ -461,7 +454,6 @@ function updateGUI(){
 		}
 		else if (!(currentState.voicePatchToBeInstalled) && (currentState.patchState == 0)) //Tout est OK
 		{
-			//$('#installPatch').addClass("disabled");
 			$('#installPatch').html("Lancer le jeu");
 		}
 		else if ((currentState.voicePatchToBeInstalled) && (currentState.patchState == 1)) //rien n'existe
@@ -475,21 +467,24 @@ function updateGUI(){
 	} else {
 		
 		if (currentState.voicePatchToBeInstalled){
+			
+			if (!busy)
+				$('#installPatch').removeClass("disabled");
 			$('#installPatch').html("Préinstaller les voix");
 			counting = false;
 		}
 		else{
+			$('#installPatch').addClass("disabled");
 			if (!counting)
 				calculateAndDisplayTimeRemaining(gameLoaded["releaseDate"]);
 			counting = true;
-			$('#installPatch').addClass("disabled");
 		}
 		
 	}
     
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
     $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
-
+	
 	
 }
 
@@ -559,7 +554,7 @@ function updateCurrentState(){
 async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
     gaugeObject.html("Récupération des infos sur " + name + "...");
     const url = 'https://www.googleapis.com/drive/v3/files/' + ID + '?key=' + config['ApiGD'];
-	
+	busy = true;
     try {
         const resultatWebVoices = await getFetch(url, 'GET', {}, false);
         if (resultatWebVoices['error'] !== undefined) {
@@ -628,13 +623,15 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 
     } catch (error) {
 		gaugeObject.html('Erreur').css('background', '#ff000080');
+		busy = false;
 		return false;
     }
+	busy = false;
 }
 
 // Lancé quand on appuie sur le bouton "Désinstaller"
 function uninstall() {
-
+	var result = true;
     if($('#uninstallAll').hasClass('disabled'))
         return;
 	$('#uninstallAll').addClass("disabled");
@@ -663,10 +660,12 @@ function uninstall() {
 				drawGauge(countFile/paths.length, $('#projectBar'));
 				$('#projectBar').html(filePath + " supprimé");
 			} else {
+				
 				console.log(`Path does not exist: ${filePath}`);
 			}
 			countFile = countFile + 1;
 		} catch (error) {
+			result = false;
 			console.error(`Error removing ${filePath}: ${error.message}`);
 		}
     }
@@ -674,8 +673,15 @@ function uninstall() {
     $('#uninstallAll').removeClass("disabled");
 
     // On affiche dans la jauge que tout est ok
-    drawGauge(100,$('#projectBar'));
-    $('#projectBar').html('Patch supprimé !');
+	if (result){
+		drawGauge(100,$('#projectBar'));
+		$('#projectBar').html('Patch supprimé !');
+	}
+	else{
+		drawGauge(0,$('#projectBar'));
+		$('#projectBar').html('Erreur');
+	}
+    
     
 	updateCurrentState(); // on actualise l'état
 	updateGUI();
@@ -824,9 +830,10 @@ async function downloadFiles() {
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
 	if (!currentState.isThereACountdown)
 		result = result && await downloadAndExtractZip("patch", gameLoaded['patchID'],$('#projectBar'), $('.filePath').html());
-	if($('#checkBox').is(':checked') && gameLoaded['voicesID'] != ""){
-		if (currentState.voicePatchToBeInstalled)
+	if($('#checkBox').is(':checked')){
+		if (currentState.voicePatchToBeInstalled){
 			result = result && await downloadAndExtractZip("mod des voix", gameLoaded['voicesID'],$('#projectBar'), $('.filePath').html());
+		}
 		if (!currentState.isThereACountdown)
 			result = result && await downloadAndExtractZip("scénario doublé", gameLoaded['voicedScriptID'],$('#projectBar'), $('.filePath').html());
 	}
@@ -845,7 +852,6 @@ async function downloadFiles() {
 		$('#projectBar').html('Patch téléchargé et installé !');
 	}
     
-    //console.log("Patch téléchargé et extrait !");
 
     // On a terminé ! Bravo !
 	

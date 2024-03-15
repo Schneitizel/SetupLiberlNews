@@ -345,7 +345,11 @@ img.logo {
 #uninstallAll:hover {
     color: red;
 }
-
+#uninstallAll.disabled {
+    background: gray;
+    cursor: not-allowed;
+    color: black;
+}
 button#installPatch {
     font-family: "Oswald";
     padding: 5px 10px;
