@@ -217,8 +217,8 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('.filePath').addClass("noPath");
 
     // On essaye de trouver où se trouve le jeu, si l'utilisateur l'a d'installé sur Steam
-	
-	installationPath = getGivenGame(gameLoaded)
+	if (installationPath == null)
+		installationPath = getGivenGame(gameLoaded)
 
 	/*
 	Soit le patch n'est pas installé, les voix non plus, la case des voix n'est pas cochée => on installe que le patch (scénario le plus simple)
