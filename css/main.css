@@ -247,7 +247,6 @@ img.logo {
     width: 45%;
     margin: 50px 20px;
     display: inline-block;
-	cursor: pointer;
 }
 
 .gamePictures img {
@@ -257,6 +256,7 @@ img.logo {
     box-shadow: 3px 3px 4px 0px #00000090;
     position: relative;
     z-index: 1;
+	cursor: pointer;
 }
 
 .gamePictures img::before {
@@ -381,6 +381,7 @@ button#installPatch.disabled {
     background: #ffffff;
     text-align: center;
     font-size: 1.3vw;
+	cursor: pointer;
 }
 
 .filePath.noPath {
@@ -409,7 +410,6 @@ button#installPatch.disabled {
     font-size: 0;
     padding: 0;
     margin: 0;
-    cursor: pointer;
     background: #00ff0000;
 }
 
