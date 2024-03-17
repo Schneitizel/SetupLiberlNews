@@ -1761,3 +1761,19 @@ function showCurrentPicture() {
     modalImg.src = currentPictureSrc;
     document.getElementById("gamePictureModal").style.display = "block";
 }
+
+function openInfo() {
+  // Check if the InfoWindow already exists
+  const container = document.getElementById('InfoWindow');
+  const content = document.getElementById('infoContent');
+  if (!content) {
+    const newInfoWindow = document.createElement('div');
+    newInfoWindow.innerHTML = config['iHtmlContent'];
+    container.appendChild(newInfoWindow);
+
+    // Call openWindow function
+    openWindow('InfoWindow');
+  } else {
+    openWindow('InfoWindow');
+  }
+}
