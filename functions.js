@@ -103,7 +103,7 @@ async function loadElements()
 {
 	isRunningOnDeck = areWeOnDeck();
     let version = require('./package.json');
-    $('.setupVersion').html('Version de l\'installateur : ' + version['version']);
+    
 	//$('.setupVersion').html('Version de l\'installateur : ' + os.homedir() + " " + process.platform);
     $('.footer').html(config["footerText"]); // On affiche le message du footer
 	
@@ -1770,7 +1770,8 @@ function openInfo() {
     const newInfoWindow = document.createElement('div');
     newInfoWindow.innerHTML = config['iHtmlContent'];
     container.appendChild(newInfoWindow);
-
+	let version = require('./package.json');
+	$('.setupVersion').html('Version de l\'installateur : ' + version['version']);
     // Call openWindow function
     openWindow('InfoWindow');
   } else {
