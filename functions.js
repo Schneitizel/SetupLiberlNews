@@ -574,9 +574,12 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
                 //console.log(result);
                 if(result['error']['errors'][0]['reason'] == "downloadQuotaExceeded")
                     gaugeObject.html('Quota de téléchargement du fichier atteint.').css('background', '#ff000080');
+                else
+                    gaugeObject.html('Erreur inconnue | ' + result['error']['errors'][0]['reason']).css('background', '#ff000080');
             }
             catch (error)
             {
+                gaugeObject.html('Erreur inconnue | ' + error).css('background', '#ff000080');
                 console.log(error);
             }
 
