@@ -81,7 +81,7 @@ body {
 
 
 .mainWindow::after {
-    background: url("../images/background.svg");
+    background: url("../images/background.png");
     background-size: cover;
     background-position: center center;
     width: 100%;
