@@ -588,6 +588,9 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
             lastWritten = written;
         }, 1000);
 
+        //console.log(url + '&alt=media');
+        //console.log(zipFilePath);
+
         const fileStream = fs.createWriteStream(zipFilePath);
         
         gaugeObject.html('');
@@ -615,14 +618,14 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 
         fs.unlink(zipFilePath, (err) => {
             if (err) {
-				gaugeObject.html('Erreur').css('background', '#ff000080');
+				gaugeObject.html('Erreur sup de ' + zipFilePath).css('background', '#ff000080');
 				return false;
             }
         });
 		return true;
 
     } catch (error) {
-		gaugeObject.html('Erreur').css('background', '#ff000080');
+		gaugeObject.html('Erreur ' + error ).css('background', '#ff000080');
 		busy = false;
 		return false;
     }
