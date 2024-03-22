@@ -565,6 +565,13 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
         gaugeObject.html("Récupération du zip de " + name + ".");
 
         const res = await fetch(url + '&alt=media', { agent });
+
+        if(!res['ok'])
+        {
+            gaugeObject.html('Erreur fichier ' + res['status']).css('background', '#ff000080');
+            return;
+        }
+
         const fileLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
 		
 		let currentDir = __dirname;
@@ -587,6 +594,8 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
             speed = written - lastWritten;
             lastWritten = written;
         }, 1000);
+
+        console.log(res);
 
         //console.log(url + '&alt=media');
         //console.log(zipFilePath);
