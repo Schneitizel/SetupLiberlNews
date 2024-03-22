@@ -34,7 +34,7 @@ const loadMainWindow = async () => {
     mainWindow.removeMenu(); // Pas de "Menu", "Options" etc...
 	remoteMain.enable(mainWindow.webContents);
     mainWindow.setTitle("Installateur - Liberl News - Version " + config["version"]);
-    //mainWindow.webContents.openDevTools({ mode: 'detach' }); // Décommenter cette ligne pour afficher les options de développeur ; utiles pour régler l'interface
+    mainWindow.webContents.openDevTools({ mode: 'detach' }); // Décommenter cette ligne pour afficher les options de développeur ; utiles pour régler l'interface
 	mainWindow.loadFile(path.join(__dirname, "loading.html")); // Chargement de la page html principale
 }
 
