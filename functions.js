@@ -1804,3 +1804,8 @@ function openInfo() {
     openWindow('InfoWindow');
   }
 }
+
+function openSetupURL() {
+	const setupURL = config['setupURL'];
+	openinDefaultBrowser(setupURL);
+}
