@@ -1767,7 +1767,7 @@ function SDeckUpdateRegistry(){
 		  fs.writeFileSync(filePath, modifiedData, 'utf8');
 		  nextStepRequired = false;
 		} else {
-		  nextStepRequired = true;
+		  nextStepRequired = false; //Existe déjà, donc pas besoin de faire autre chose
 		}
 	  } else {
 		const newBlock = `${targetKey} 1696584635\n${newLineToAdd}\n\n`; 
