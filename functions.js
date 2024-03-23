@@ -437,7 +437,7 @@ function calculateAndDisplayTimeRemaining(targetDate) {
     return intervalId;
 }
 
-function updateGUI(){
+async function updateGUI(){
 	let color = "#6CDC3D";
 	if (!currentState.isThereACountdown){
 		counting = false;
@@ -485,8 +485,18 @@ function updateGUI(){
     
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
     $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
-	
-	
+	const get_url = config["domain"] + "/get_download_count.php";
+    const data = { "name": gameLoaded["name"] };
+	var dls;
+	getFetch(get_url, "POST", data, false)
+    .then(response => {
+        const dls = response.downloadCount;
+        $('#nbDls').html('   ' + dls);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+		dls = null;
+    });
 }
 
 function updateCurrentState(){
@@ -553,25 +563,20 @@ function updateCurrentState(){
 
 async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
     gaugeObject.html("Récupération des infos sur " + name + "...");
-    const url = 'https://www.googleapis.com/drive/v3/files/' + ID + '?key=' + config['ApiGD'];
+    const url = config["domain"] + "/" + ID;
+	const filenameWithExtension = path.basename(url);
 	busy = true;
     try {
-        const resultatWebVoices = await getFetch(url, 'GET', {}, false);
-        if (resultatWebVoices['error'] !== undefined) {
-            gaugeObject.html('Erreur ' + resultatWebVoices['error']['code']).css('background', '#ff000080');
-            return false;
-        }
 		drawGauge(0,gaugeObject);
         gaugeObject.html("Récupération du zip de " + name + ".");
 
-        const res = await fetch(url + '&alt=media', { agent });
+        const res = await fetch(url);
 
         if(!res['ok'])
         {
             try 
             {
                 const result = await res.json();
-                //console.log(result);
                 if(result['error']['errors'][0]['reason'] == "downloadQuotaExceeded")
                     gaugeObject.html('Quota de téléchargement du fichier atteint.').css('background', '#ff000080');
                 else
@@ -593,7 +598,7 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 		if (currentDir.endsWith('.asar'))
 			currentDir = path.dirname(currentDir); //in a portable build dirrname is an archive so the download will fail
 		
-        const zipFilePath = currentDir + directorySeparator + resultatWebVoices['name'];
+        const zipFilePath = currentDir + directorySeparator + ID;
 
         let seconds = 0.0;
         let inter = setInterval(() => {
@@ -854,14 +859,14 @@ async function downloadFiles() {
 	
 	let result = true;
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
-	if (!currentState.isThereACountdown)
-		result = result && await downloadAndExtractZip("patch", gameLoaded['patchID'],$('#projectBar'), $('.filePath').html());
+	if ((!currentState.isThereACountdown) && (currentState.patchState != 0))
+		result = result && await downloadAndExtractZip("patch", gameLoaded['patchFilename'],$('#projectBar'), $('.filePath').html());
 	if($('#checkBox').is(':checked')){
 		if (currentState.voicePatchToBeInstalled){
-			result = result && await downloadAndExtractZip("mod des voix", gameLoaded['voicesID'],$('#projectBar'), $('.filePath').html());
+			result = result && await downloadAndExtractZip("mod des voix", gameLoaded['voicesFilename'],$('#projectBar'), $('.filePath').html());
 		}
 		if (!currentState.isThereACountdown)
-			result = result && await downloadAndExtractZip("scénario doublé", gameLoaded['voicedScriptID'],$('#projectBar'), $('.filePath').html());
+			result = result && await downloadAndExtractZip("scénario doublé", gameLoaded['voicedScriptFilename'],$('#projectBar'), $('.filePath').html());
 	}
 	
     // On enregistre la version du patch installé ; on sauvegarde aussi les infos utilisateur en local (Dans %APPDATA%/config.json)
@@ -876,6 +881,8 @@ async function downloadFiles() {
 	if (result){
 		drawGauge(100,$('#projectBar'));
 		$('#projectBar').html('Patch téléchargé et installé !');
+		incrementDownloadCount(gameLoaded['name']);
+	
 	}
     
 
@@ -1472,7 +1479,7 @@ function updateMarkerColor(marker){
 			break;
 
 		case "Disponible":
-			marker.setAttribute('fill', 'green');
+			marker.setAttribute('fill', '#90EE90cc');
 			break;
 
 		default:
@@ -1494,7 +1501,7 @@ function getColorForStatus(status) {
             return 'orange';
 
         case "Disponible":
-            return 'green';
+            return '#90EE90ff';
 
         default:
             return 'black'; // Default color for other status conditions
@@ -1808,4 +1815,9 @@ function openInfo() {
 function openSetupURL() {
 	const setupURL = config['setupURL'];
 	openinDefaultBrowser(setupURL);
+}
+
+function incrementDownloadCount(name) {
+	const increment_url = config["domain"] + "/" + 'update_download_count.php';
+	getFetch(increment_url, "POST", {"name": name}, false)
 }
