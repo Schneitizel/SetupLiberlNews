@@ -215,7 +215,20 @@ function openProject(type = "trails", id = "Sky", game = 0)
 
     $('.filePath').html("Dossier \"" + gameLoaded['steamFolderName'] + "\" non trouvé.");
     $('.filePath').addClass("noPath");
-
+	
+	var dls;
+	const get_url = config["domain"] + "/get_download_count.php";
+    const data = { "name": gameLoaded["name"] };
+	$('#nbDls').html('   ');
+	getFetch(get_url, "POST", data, false, asy = true)
+    .then(response => {
+        const dls = response.downloadCount;
+        $('#nbDls').html('   ' + dls);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+		dls = null;
+    });
     // On essaye de trouver où se trouve le jeu, si l'utilisateur l'a d'installé sur Steam
 	if (installationPath == null)
 		installationPath = getGivenGame(gameLoaded)
@@ -226,14 +239,15 @@ function openProject(type = "trails", id = "Sky", game = 0)
 	soit les voix sont installées mais pas le patch => on installe le patch
 	soit le patch est installé mais pas les voix, mais la case est cocheé => on installe les voix
 	si y a un problème à un quelconque moment l'utilisateur peut cliquer sur un bouton désinstaller qui va enlever voix et patch (table rase). ensuite il pourra cocher la case des voix et installer et ça lui donnera voix et patch*/
-    onChangePath();
+    console.log("a");
+	onChangePath();
 	updateCurrentState(); // on actualise l'état
 	updateGUI();
 	
     menu.animate({
         opacity: 0
     }, config["speedAnimation"]);
-
+	
     setTimeout(function(){
         $('.displayGame').css('display', 'block').animate({
         opacity: 1
@@ -242,6 +256,7 @@ function openProject(type = "trails", id = "Sky", game = 0)
         complete: function() {
             // Callback function executed after the animation is complete
             // Hide the menu
+			console.log("b");
             menu.css('display', 'none');
 			$('.map-tooltip').css('display', 'none');
         }
@@ -485,18 +500,8 @@ async function updateGUI(){
     
     $('#versionPatchInstalle').html('   ' + currentState.userVersion);
     $('#versionPatchDispo').html('   ' + gameLoaded['patchVersion']).css('color', color);
-	const get_url = config["domain"] + "/get_download_count.php";
-    const data = { "name": gameLoaded["name"] };
-	var dls;
-	getFetch(get_url, "POST", data, false)
-    .then(response => {
-        const dls = response.downloadCount;
-        $('#nbDls').html('   ' + dls);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-		dls = null;
-    });
+	
+	
 }
 
 function updateCurrentState(){
@@ -571,7 +576,6 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
         gaugeObject.html("Récupération du zip de " + name + ".");
 
         const res = await fetch(url);
-
         if(!res['ok'])
         {
             try 
@@ -590,7 +594,6 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
 
             return;
         }
-
         const fileLength = parseInt(res.headers.get("Content-Length" || "0"), 10);
 		
 		let currentDir = __dirname;
@@ -613,14 +616,9 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
             speed = written - lastWritten;
             lastWritten = written;
         }, 1000);
-
         console.log(res);
 
-        //console.log(url + '&alt=media');
-        //console.log(zipFilePath);
-
         const fileStream = fs.createWriteStream(zipFilePath);
-        
         gaugeObject.html('');
         await new Promise((resolve, reject) => {
             res.body.pipe(fileStream);
@@ -629,7 +627,7 @@ async function downloadAndExtractZip(name, ID, gaugeObject, outputFolder) {
                 written += data.length;
                 const percent = (written / fileLength) * 100;
                 drawGauge(percent,gaugeObject);
-                gaugeObject.html('Téléchargement - ' + percent.toFixed(2) + '% (' + formatBytes(speed) + ')');
+                gaugeObject.html(filenameWithExtension + '- ' + percent.toFixed(2) + '% (' + formatBytes(speed) + ')');
             });
 
             res.body.on('error', err => {
@@ -859,14 +857,26 @@ async function downloadFiles() {
 	
 	let result = true;
     // On obtient d'abord les infos du fichier, tel que son nom et son poids
-	if ((!currentState.isThereACountdown) && (currentState.patchState != 0))
-		result = result && await downloadAndExtractZip("patch", gameLoaded['patchFilename'],$('#projectBar'), $('.filePath').html());
+	if ((!currentState.isThereACountdown) && (currentState.patchState != 0)){
+		
+		for (let i = 0; i < gameLoaded['patchFilenames'].length; i++) {
+			const filename = gameLoaded['patchFilenames'][i];
+			result = result && await downloadAndExtractZip("patch", filename, $('#projectBar'), $('.filePath').html());
+		}
+	}
 	if($('#checkBox').is(':checked')){
 		if (currentState.voicePatchToBeInstalled){
-			result = result && await downloadAndExtractZip("mod des voix", gameLoaded['voicesFilename'],$('#projectBar'), $('.filePath').html());
+			for (let i = 0; i < gameLoaded['voicesFilenames'].length; i++) {
+				const filename = gameLoaded['voicesFilenames'][i];
+				result = result && await downloadAndExtractZip("mod des voix", filename, $('#projectBar'), $('.filePath').html());
+			}
 		}
-		if (!currentState.isThereACountdown)
-			result = result && await downloadAndExtractZip("scénario doublé", gameLoaded['voicedScriptFilename'],$('#projectBar'), $('.filePath').html());
+		if (!currentState.isThereACountdown){
+			for (let i = 0; i < gameLoaded['voicedScriptFilenames'].length; i++) {
+				const filename = gameLoaded['voicedScriptFilenames'][i];
+				result = result && await downloadAndExtractZip("scénario doublé", filename, $('#projectBar'), $('.filePath').html());
+			}
+		}
 	}
 	
     // On enregistre la version du patch installé ; on sauvegarde aussi les infos utilisateur en local (Dans %APPDATA%/config.json)
@@ -898,7 +908,11 @@ async function downloadFiles() {
 function isVoicePatchInstalled(){
 	return fs.existsSync(installationPath + "/voice/ed_voice.dll");
 }
-	
+function removeTheAbomination(){
+	var theAbomination = installationPath + "/voice/scena";
+	if (fs.existsSync(theAbomination))
+		fs.rmdirSync(theAbomination, { recursive: true });
+}
 // Permet d'extraire les archives .zip
 // TO-DO : Voir pour mettre un mot de passe aux archives, pour éviter le vol (?)
 async function fct(pathAbs, outputFolder, gaugeObject){
@@ -994,14 +1008,14 @@ function formatBytes(bytes, decimals = 2) {
 
 // Permet de faire des requêtes web
 // Si method est GET, les arguments doivent être mis dans l'url (https://domaine.com/page.php?arg=1&args=2)
-async function getFetch(url, method = "POST", args = {}, json = true){
+async function getFetch(url, method = "POST", args = {}, json = true, asy = false){
 	let result;
 
     result = await $.ajax({
         url: url,
         type: method,
         data: args,
-        async: false,
+        async: asy,
     }).catch(function(error){
         return JSON.parse('{"error": {"code": ' + error.status + '}}');
     });
@@ -1213,6 +1227,7 @@ function onChangeCheckbox() {
 }
 
 function playButton() {
+	removeTheAbomination();
 	currentPath = $('.filePath').html();
 	console.log(currentPath);
 	try{
