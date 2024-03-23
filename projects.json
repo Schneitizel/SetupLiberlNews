@@ -17,7 +17,7 @@
           "toBeUninstalled": ["data_fr", "dinput8.dll", "icudt71.dll", "icuuc71.dll", "voice"],
           "releaseDate": "2024-03-22T18:00:00",
           "exe_name": "ed6_win_DX9.exe",
-          "status": "Disponible bientôt",
+          "status": "Disponible",
           "inGameDate": "Début S1202",
           "locationOnMap": { "x": 29.6, "y": 68.6 },
           "staff": [
