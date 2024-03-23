@@ -216,19 +216,7 @@ function openProject(type = "trails", id = "Sky", game = 0)
     $('.filePath').html("Dossier \"" + gameLoaded['steamFolderName'] + "\" non trouvé.");
     $('.filePath').addClass("noPath");
 	
-	var dls;
-	const get_url = config["domain"] + "/get_download_count.php";
-    const data = { "name": gameLoaded["name"] };
-	$('#nbDls').html('   ');
-	getFetch(get_url, "POST", data, false, asy = true)
-    .then(response => {
-        const dls = response.downloadCount;
-        $('#nbDls').html('   ' + dls);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-		dls = null;
-    });
+	updateDownloads();
     // On essaye de trouver où se trouve le jeu, si l'utilisateur l'a d'installé sur Steam
 	if (installationPath == null)
 		installationPath = getGivenGame(gameLoaded)
@@ -262,6 +250,24 @@ function openProject(type = "trails", id = "Sky", game = 0)
         }
     });
     }, config["speedAnimation"]);
+	
+}
+
+function updateDownloads(){
+	
+	var dls;
+	const get_url = config["domain"] + "/get_download_count.php";
+    const data = { "name": gameLoaded["name"] };
+	$('#nbDls').html('   ');
+	getFetch(get_url, "POST", data, false, asy = true)
+    .then(response => {
+        const dls = response.downloadCount;
+        $('#nbDls').html('   ' + dls);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+		dls = null;
+    });
 	
 }
 
@@ -863,6 +869,8 @@ async function downloadFiles() {
 			const filename = gameLoaded['patchFilenames'][i];
 			result = result && await downloadAndExtractZip("patch", filename, $('#projectBar'), $('.filePath').html());
 		}
+		if (result)
+			incrementDownloadCount(gameLoaded['name']);
 	}
 	if($('#checkBox').is(':checked')){
 		if (currentState.voicePatchToBeInstalled){
@@ -891,7 +899,6 @@ async function downloadFiles() {
 	if (result){
 		drawGauge(100,$('#projectBar'));
 		$('#projectBar').html('Patch téléchargé et installé !');
-		incrementDownloadCount(gameLoaded['name']);
 	
 	}
     
@@ -903,6 +910,7 @@ async function downloadFiles() {
 	
 	updateCurrentState(); // on actualise l'état
 	updateGUI();
+	updateDownloads();
 }
 
 function isVoicePatchInstalled(){
