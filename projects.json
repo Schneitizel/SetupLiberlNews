@@ -8,7 +8,7 @@
           "name": "Trails in the Sky FC",
           "steamId": 251150,
           "GOGId": 1207665083,
-          "patchVersion": "1.0.2",
+          "patchVersion": "1.0.3",
           "patchFilenames": ["patch.zip"],
           "voicesFilenames": ["voices_1.zip","voices_2.zip","voices_3.zip"],
           "voicedScriptFilenames": ["script_dubbed.zip"],
